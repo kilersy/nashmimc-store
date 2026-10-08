@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NashmiMC Network | Store - Minecraft Store</title>
+    <meta name="description" content="Official Minecraft Store for NashmiMC Network - Ranks, Money, Gold, Keys and Custom Ranks.">
+    <meta name="keywords" content="Minecraft Store, Nashmi Store, Minecraft Server, Nashmi Server, NashmiMC">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="banner1.png">
+
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PayPal JS SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=BAAVyhzar9vWktQ03S8Q9wNJ8xtWrm3fmwT1UC5HTxt7xNrSAQMSnNWMjFD9ETWZcUMucDEc0HuXYgvrBU&currency=USD"></script>
+
+    <!-- Custom CSS File -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Top Utility Navigation -->
+    <header class="top-utility-bar">
+        <div class="brand-container">
+            <div class="brand-logo-text" id="brandText">NASHMIMC NETWORK</div>
+        </div>
+        <div class="utility-actions">
+            <button class="cart-btn" onclick="toggleCartDrawer()">
+                <i class="fa-solid fa-shopping-cart"></i> <span id="cartText">Cart</span> (<span id="cart-count">0</span>)
+            </button>
+            <button class="menu-drawer-toggle" onclick="toggleNavDrawer()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="cart-drawer-header">
+            <h3 id="cartHeaderTitle"><i class="fa-solid fa-cart-shopping"></i> Shopping Cart</h3>
+            <button class="modal-close" onclick="toggleCartDrawer()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="cart-items-list" id="cartItemsContainer"></div>
+        
+        <div class="cart-coupon-section">
+            <div class="coupon-input-row">
+                <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Coupon Code (e.g. NASHMI2026)">
+                <button class="coupon-apply-btn" id="couponApplyBtn" onclick="applyCoupon()">Apply</button>
+            </div>
+            <div class="coupon-msg" id="couponMsg"></div>
+        </div>
+
+        <div class="cart-drawer-footer">
+            <div class="cart-total-row">
+                <span id="cartTotalLabel">Total:</span>
+                <span id="cartTotalDisplay">$0.00</span>
+            </div>
+            <div class="cart-actions-group">
+                <button class="btn-clear-cart" id="clearCartBtn" onclick="clearCart()"><i class="fa-solid fa-trash"></i> Clear</button>
+                <button class="btn-checkout" id="checkoutBtn" onclick="openCheckoutModal()">Checkout <i class="fa-solid fa-arrow-right" id="checkoutArrowIcon"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Navigation Drawer -->
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <h3 style="color: var(--accent);" id="navHeaderTitle">Navigation</h3>
+            <button class="modal-close" onclick="toggleNavDrawer()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <ul class="drawer-links" id="drawerLinksContainer">
+            <li><a href="#" onclick="switchSection('home-section'); toggleNavDrawer();"><i class="fa-solid fa-house" style="color: var(--accent);"></i> <span class="nav-home">Home</span></a></li>
+            <li><a href="#" onclick="switchSection('ranks-section'); toggleNavDrawer();"><i class="fa-solid fa-crown" style="color: var(--accent);"></i> <span class="nav-ranks">Ranks</span></a></li>
+            <li><a href="#" onclick="switchSection('smp-money-section'); toggleNavDrawer();"><i class="fa-solid fa-globe" style="color: var(--accent);"></i> <span class="nav-smp-money">SMP Money</span></a></li>
+            <li><a href="#" onclick="switchSection('smp-shells-section'); toggleNavDrawer();"><i class="fa-solid fa-gem" style="color: var(--accent);"></i> <span class="nav-smp-gold">SMP Gold</span></a></li>
+            <li><a href="#" onclick="switchSection('smp-keys-section'); toggleNavDrawer();"><i class="fa-solid fa-key" style="color: var(--accent);"></i> <span class="nav-smp-keys">SMP Keys</span></a></li>
+            <li><a href="#" onclick="switchSection('box-coins-section'); toggleNavDrawer();"><i class="fa-solid fa-coins" style="color: var(--accent);"></i> <span class="nav-box-gold">BoxPvP Gold</span></a></li>
+            <li><a href="#" onclick="switchSection('box-keys-section'); toggleNavDrawer();"><i class="fa-solid fa-key" style="color: var(--accent);"></i> <span class="nav-box-keys">BoxPvP Keys</span></a></li>
+            <li><a href="#" onclick="switchSection('custom-section'); toggleNavDrawer();"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent);"></i> <span class="nav-custom">Custom Rank</span></a></li>
+            <li><a href="#" onclick="switchSection('tracking-section'); toggleNavDrawer();"><i class="fa-solid fa-magnifying-glass-chart" style="color: var(--accent);"></i> <span class="nav-tracking">Order Tracking</span></a></li>
+            <li><a href="#" onclick="switchSection('faq-section'); toggleNavDrawer();"><i class="fa-solid fa-circle-question" style="color: var(--accent);"></i> <span class="nav-faq">FAQ</span></a></li>
+            <li><a href="#" onclick="switchSection('about-section'); toggleNavDrawer();"><i class="fa-solid fa-circle-info" style="color: var(--accent);"></i> <span class="nav-about">About Us</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Wrapper -->
+    <div class="main-container">
+
+        <!-- Server Banner -->
+        <div class="server-banner-wrapper">
+           <img src="banner.gif" alt="NashmiMC Banner" style="width: 100%; height: auto; display: block; border-radius: 12px;">
+        </div>
+
+        <!-- Navigation Bar -->
+        <nav class="nav-options-bar">
+            <div class="nav-item" onclick="switchSection('home-section')">
+                <i class="fa-solid fa-house" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-home">Home</div>
+            </div>
+
+            <div class="nav-item" onclick="switchSection('ranks-section')">
+                <i class="fa-solid fa-crown" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-ranks">Ranks</div>
+            </div>
+            
+            <div class="nav-item" id="smpNavBtn">
+                <i class="fa-solid fa-globe" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-smp">SMP</div>
+                <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
+                <div class="dropdown-menu" id="smpDropdown">
+                    <a href="#" class="dropdown-item nav-smp-money" onclick="switchSection('smp-money-section');">SMP Money</a>
+                    <a href="#" class="dropdown-item nav-smp-gold" onclick="switchSection('smp-shells-section');">SMP Gold</a>
+                    <a href="#" class="dropdown-item nav-smp-keys" onclick="switchSection('smp-keys-section');">SMP Keys</a>
+                </div>
+            </div>
+
+            <div class="nav-item" id="boxNavBtn">
+                <i class="fa-solid fa-box-open" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-boxpvp">BoxPvP</div>
+                <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
+                <div class="dropdown-menu" id="boxDropdown">
+                    <a href="#" class="dropdown-item nav-box-gold" onclick="switchSection('box-coins-section');">Box Gold</a>
+                    <a href="#" class="dropdown-item nav-box-keys" onclick="switchSection('box-keys-section');">BoxPvP Keys</a>
+                </div>
+            </div>
+
+            <div class="nav-item" onclick="switchSection('custom-section')">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-custom">Custom Rank</div>
+            </div>
+
+            <div class="nav-item" onclick="switchSection('tracking-section')">
+                <i class="fa-solid fa-magnifying-glass-chart" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-tracking">Order Tracking</div>
+            </div>
+
+            <div class="nav-item" onclick="switchSection('about-section')">
+                <i class="fa-solid fa-circle-info" style="color: var(--accent);"></i>
+                <div class="nav-item-content nav-about">About Us</div>
+            </div>
+        </nav>
+
+        <!-- SECTION 0: HOME -->
+        <section id="home-section" class="store-section active">
+            <div class="home-card">
+                <h2 style="color: var(--accent); margin-bottom: 15px; font-size: 2.2rem;" class="home-title">Welcome to NashmiMC Network Store</h2>
+                <p style="color: var(--text-muted); line-height: 1.8; max-width: 900px; margin: 0 auto 20px; font-size: 1.05rem;" class="home-desc">
+                    NashmiMC is your ultimate Arabic Minecraft network experience! We offer balanced, high-performance game modes including Survival SMP & BoxPvP with custom features, amazing kits, and active community events.
+                </p>
+
+                <h3 style="color: var(--text-main); margin-top: 30px; font-size: 1.4rem;" class="home-guide-title">How to Purchase Items</h3>
+                <div class="home-guide-grid">
+                    <div class="guide-box">
+                        <h4><i class="fa-solid fa-1"></i> <span class="guide-1-title">Browse & Select</span></h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;" class="guide-1-desc">Choose your desired ranks, money, keys, or build your own custom rank from the top menu.</p>
+                    </div>
+                    <div class="guide-box">
+                        <h4><i class="fa-solid fa-2"></i> <span class="guide-2-title">Add to Cart</span></h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;" class="guide-2-desc">Click "Add to Cart" or "Buy Now" to review your selected items in the cart drawer.</p>
+                    </div>
+                    <div class="guide-box">
+                        <h4><i class="fa-solid fa-3"></i> <span class="guide-3-title">Secure Checkout</span></h4>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;" class="guide-3-desc">Proceed to checkout, pay via PayPal/Cards or USDT Crypto, and receive your unique Order ID.</p>
+                    </div>
+                </div>
+
+                <div class="about-ticket-notice">
+                    <i class="fa-solid fa-headset"></i>
+                    <p><strong class="notice-important">Important Notice:</strong> <span class="notice-desc">Orders are automatically processed and sent to Discord. Response and delivery time inside server is within 3 to 4 hours maximum. If you encounter any issue, open a support ticket on Discord!</span></p>
+                </div>
+
+                <div style="margin: 25px 0;">
+                    <p style="color: var(--text-muted); margin-bottom: 10px; font-weight: 600;" class="server-ip-label">Server IP Address:</p>
+                    <div class="ip-box-container">
+                        <span class="ip-text" id="homeServerIp">play.nashmimc.net</span>
+                        <button class="btn-copy-ip" onclick="copyHomeServerIp()"><i class="fa-solid fa-copy"></i> <span class="copy-btn-text">Copy</span></button>
+                    </div>
+                </div>
+
+                <div class="social-icons-row">
+                    <a href="https://discord.gg/mB37jz6E7N" target="_blank" class="social-icon-link" title="Discord"><i class="fa-brands fa-discord"></i></a>
+                    <a href="https://www.youtube.com/@nashmi-23" target="_blank" class="social-icon-link" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@nashmimc?_r=1&_t=ZS-96Po1h39Cfl" target="_blank" class="social-icon-link" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="https://kick.com/NASHMI23" target="_blank" class="social-icon-link" title="Kick"><span class="kick-badge">K</span></a>
+                    <a href="https://www.instagram.com/" target="_blank" class="social-icon-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: ORDER TRACKING -->
+        <section id="tracking-section" class="store-section">
+            <div class="tracking-card">
+                <h2 style="color: var(--accent); margin-bottom: 15px; font-size: 2rem;" class="tracking-main-title">Order Tracking System</h2>
+                <p style="color: var(--text-muted); max-width: 750px; margin: 0 auto;" class="tracking-sub-desc">
+                    Your orders are synchronized live with Discord. Response and delivery time is guaranteed within 3 to 4 hours maximum.
+                </p>
+                
+                <div class="tracking-search-box">
+                    <input type="text" id="trackingInput" class="tracking-input" placeholder="Enter Order ID (e.g. NASHMI-849201)">
+                    <button class="tracking-btn" id="trackBtn" onclick="trackOrder()">Track Order</button>
+                </div>
+
+                <div class="tracking-result-box" id="trackingResultBox">
+                    <h4 id="trackingResultTitle" style="color: var(--accent); margin-bottom: 8px;">Order Details</h4>
+                    <div id="trackingResultText" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;"></div>
+                </div>
+
+                <div id="userOrdersList" style="margin-top: 30px; text-align: left;">
+                    <h3 style="color: var(--accent); margin-bottom: 15px; font-size: 1.2rem;">Your Active Orders:</h3>
+                    <div id="userOrdersContainer" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: FAQ -->
+        <section id="faq-section" class="store-section">
+            <div class="faq-card">
+                <h2 style="color: var(--accent); margin-bottom: 15px; font-size: 2rem;" class="faq-main-title">Frequently Asked Questions</h2>
+                <p style="color: var(--text-muted); max-width: 800px; margin: 0 auto;" class="faq-sub-desc">
+                    Find answers to common questions regarding purchases, manual delivery, and support.
+                </p>
+
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h4 class="faq-q1">How long does delivery take?</h4>
+                        <p class="faq-a1">Orders are sent automatically to Discord and delivered within 3 to 4 hours maximum by our staff team.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4 class="faq-q2">What should I do if I entered the wrong IGN?</h4>
+                        <p class="faq-a2">Immediately open a support ticket on our Discord server with your Order ID and correct username.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4 class="faq-q3">Are payments secure?</h4>
+                        <p class="faq-a3">Yes, all payments processed through PayPal and cryptocurrency are fully secure.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4 class="faq-q4">How do I use promo codes?</h4>
+                        <p class="faq-a4">You can enter active discount codes directly into the coupon box inside your shopping cart before checkout.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 1: RANKS -->
+        <section id="ranks-section" class="store-section">
+            <div class="section-title"><span class="ranks-title-prefix">Server</span> <span class="ranks-title-highlight">Ranks (Lifetime)</span></div>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="vip.jpg" alt="VIP Rank"></div>
+                    <div>
+                        <div class="product-name-row">
+                            <div class="product-name rank-vip">VIP Rank</div>
+                            <span class="rank-info-btn" onclick="showNotification('<i class=\'fa-solid fa-crown\' style=\'color:var(--accent)\'></i>', 'VIP Rank Features', 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.')" title="Rank Info">?</span>
+                        </div>
+                        <div class="product-price">$3.99</div>
+                    </div>
+                    <div class="card-actions-row">
+                        <button class="btn-cart-action btn-add-cart" onclick="addToCart('VIP Rank', 3.99)">Add to Cart</button>
+                        <button class="btn-buynow-action btn-buy-now" onclick="buyNow('VIP Rank', 3.99)">Buy Now</button>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="mvp.jpg" alt="MVP Rank"></div>
+                    <div>
+                        <div class="product-name-row">
+                            <div class="product-name rank-mvp">MVP Rank</div>
+                            <span class="rank-info-btn" onclick="showNotification('<i class=\'fa-solid fa-crown\' style=\'color:var(--accent)\'></i>', 'MVP Rank Features', 'Grants MVP prefix, /heal, /feed, 5 homes limit, 2 virtual vaults, and MVP kit.')" title="Rank Info">?</span>
+                        </div>
+                        <div class="product-price">$9.99</div>
+                    </div>
+                    <div class="card-actions-row">
+                        <button class="btn-cart-action btn-add-cart" onclick="addToCart('MVP Rank', 9.99)">Add to Cart</button>
+                        <button class="btn-buynow-action btn-buy-now" onclick="buyNow('MVP Rank', 9.99)">Buy Now</button>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="mvp+.jpg" alt="MVP+ Rank"></div>
+                    <div>
+                        <div class="product-name-row">
+                            <div class="product-name rank-mvpplus">MVP+ Rank</div>
+                            <span class="rank-info-btn" onclick="showNotification('<i class=\'fa-solid fa-crown\' style=\'color:var(--accent)\'></i>', 'MVP+ Rank Features', 'Grants MVP+ prefix, /fly in lobby, /heal, /feed, 8 homes limit, 4 virtual vaults, and exclusive kit.')" title="Rank Info">?</span>
+                        </div>
+                        <div class="product-price">$17.99</div>
+                    </div>
+                    <div class="card-actions-row">
+                        <button class="btn-cart-action btn-add-cart" onclick="addToCart('MVP+ Rank', 17.99)">Add to Cart</button>
+                        <button class="btn-buynow-action btn-buy-now" onclick="buyNow('MVP+ Rank', 17.99)">Buy Now</button>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="nashmi.jpg" alt="NASHMI Rank"></div>
+                    <div>
+                        <div class="product-name-row">
+                            <div class="product-name rank-nashmi">NASHMI Rank</div>
+                            <span class="rank-info-btn" onclick="showNotification('<i class=\'fa-solid fa-crown\' style=\'color:var(--accent)\'></i>', 'NASHMI Rank Features', 'Grants custom NASHMI prefix, /fly, /workbench, /anvil, 12 homes, 6 virtual vaults, and elite kit.')" title="Rank Info">?</span>
+                        </div>
+                        <div class="product-price">$29.99</div>
+                    </div>
+                    <div class="card-actions-row">
+                        <button class="btn-cart-action btn-add-cart" onclick="addToCart('NASHMI Rank', 29.99)">Add to Cart</button>
+                        <button class="btn-buynow-action btn-buy-now" onclick="buyNow('NASHMI Rank', 29.99)">Buy Now</button>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="nashmi+.jpg" alt="NASHMI+ Rank"></div>
+                    <div>
+                        <div class="product-name-row">
+                            <div class="product-name rank-nashmiplus">NASHMI+ Rank</div>
+                            <span class="rank-info-btn" onclick="showNotification('<i class=\'fa-solid fa-crown\' style=\'color:var(--accent)\'></i>', 'NASHMI+ Rank Features', 'Grants ultimate NASHMI+ prefix, all commands unlocked, /fly, /heal, /feed, /anvil, /ec, 20 homes, 10 virtual vaults, and legendary kit.')" title="Rank Info">?</span>
+                        </div>
+                        <div class="product-price">$59.99</div>
+                    </div>
+                    <div class="card-actions-row">
+                        <button class="btn-cart-action btn-add-cart" onclick="addToCart('NASHMI+ Rank', 59.99)">Add to Cart</button>
+                        <button class="btn-buynow-action btn-buy-now" onclick="buyNow('NASHMI+ Rank', 59.99)">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: SMP MONEY -->
+        <section id="smp-money-section" class="store-section">
+            <div class="section-title"><span class="smp-title-prefix">SMP</span> <span class="money-title-highlight">Money Bundles</span></div>
+            <div class="products-grid">
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="100k"></div><div><div class="product-name item-money">100k SMP Money</div><div class="product-price">$0.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('100k SMP Money', 0.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('100k SMP Money', 0.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="300k"></div><div><div class="product-name item-money">300k SMP Money</div><div class="product-price">$2.49</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('300k SMP Money', 2.49)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('300k SMP Money', 2.49)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="500k"></div><div><div class="product-name item-money">500k SMP Money</div><div class="product-price">$4.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('500k SMP Money', 4.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('500k SMP Money', 4.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="1M"></div><div><div class="product-name item-money">1M SMP Money</div><div class="product-price">$9.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('1M SMP Money', 9.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('1M SMP Money', 9.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="3M"></div><div><div class="product-name item-money">3M SMP Money</div><div class="product-price">$24.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('3M SMP Money', 24.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('3M SMP Money', 24.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="5M"></div><div><div class="product-name item-money">5M SMP Money</div><div class="product-price">$49.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('5M SMP Money', 49.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('5M SMP Money', 49.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="money.jpg" alt="10M"></div><div><div class="product-name item-money">10M SMP Money</div><div class="product-price">$74.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('10M SMP Money', 74.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('10M SMP Money', 74.99)">Buy Now</button></div></div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: SMP GOLD -->
+        <section id="smp-shells-section" class="store-section">
+            <div class="section-title"><span class="smp-title-prefix">SMP</span> <span class="gold-title-highlight">Gold Bundles</span></div>
+            <div class="products-grid">
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="100"></div><div><div class="product-name item-gold">100 SMP Gold</div><div class="product-price">$0.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('100 SMP Gold', 0.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('100 SMP Gold', 0.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="720"></div><div><div class="product-name item-gold">720 SMP Gold</div><div class="product-price">$4.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('720 SMP Gold', 4.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('720 SMP Gold', 4.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="1680"></div><div><div class="product-name item-gold">1680 SMP Gold</div><div class="product-price">$9.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('1680 SMP Gold', 9.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('1680 SMP Gold', 9.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="3600"></div><div><div class="product-name item-gold">3600 SMP Gold</div><div class="product-price">$19.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('3600 SMP Gold', 19.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('3600 SMP Gold', 19.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="6580"></div><div><div class="product-name item-gold">6580 SMP Gold</div><div class="product-price">$34.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('6580 SMP Gold', 34.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('6580 SMP Gold', 34.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="10k"></div><div><div class="product-name item-gold">10,000 SMP Gold</div><div class="product-price">$49.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('10,000 SMP Gold', 49.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('10,000 SMP Gold', 49.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="16.6k"></div><div><div class="product-name item-gold">16,600 SMP Gold</div><div class="product-price">$74.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('16,600 SMP Gold', 74.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('16,600 SMP Gold', 74.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="22.4k"></div><div><div class="product-name item-gold">22,400 SMP Gold</div><div class="product-price">$99.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('22,400 SMP Gold', 99.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('22,400 SMP Gold', 99.99)">Buy Now</button></div></div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: SMP KEYS -->
+        <section id="smp-keys-section" class="store-section">
+            <div class="section-title"><span class="smp-title-prefix">SMP</span> <span class="keys-title-highlight">Crate Keys</span></div>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="doom_key.jpg" alt="DOOM key"></div>
+                    <div><div class="product-name key-doom">DOOM key</div><div class="product-price" id="price-smp-keyall">$2.49</div></div>
+                    <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;"><label style="font-size: 0.85rem; color: var(--text-muted);" class="qty-label">Quantity:</label><input type="number" id="qty-smp-keyall" min="1" value="1" class="qty-input-box" oninput="updateKeyPrice('price-smp-keyall', 2.49, this.value)"></div>
+                    <div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addKeyToCart('DOOM key', 2.49, 'qty-smp-keyall')">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyKeyNow('DOOM key', 2.49, 'qty-smp-keyall')">Buy Now</button></div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="magma_Key.jpg" alt="MAGMA Key"></div>
+                    <div><div class="product-name key-magma">MAGMA Key</div><div class="product-price" id="price-smp-spawner">$4.99</div></div>
+                    <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;"><label style="font-size: 0.85rem; color: var(--text-muted);" class="qty-label">Quantity:</label><input type="number" id="qty-smp-spawner" min="1" value="1" class="qty-input-box" oninput="updateKeyPrice('price-smp-spawner', 4.99, this.value)"></div>
+                    <div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addKeyToCart('MAGMA Key', 4.99, 'qty-smp-spawner')">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyKeyNow('MAGMA Key', 4.99, 'qty-smp-spawner')">Buy Now</button></div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="mythic_key.jpg" alt="MYTHIC Key"></div>
+                    <div><div class="product-name key-mythic">MYTHIC Key</div><div class="product-price" id="price-smp-summer">$9.99</div></div>
+                    <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;"><label style="font-size: 0.85rem; color: var(--text-muted);" class="qty-label">Quantity:</label><input type="number" id="qty-smp-summer" min="1" value="1" class="qty-input-box" oninput="updateKeyPrice('price-smp-summer', 9.99, this.value)"></div>
+                    <div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addKeyToCart('MYTHIC Key', 9.99, 'qty-smp-summer')">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyKeyNow('MYTHIC Key', 9.99, 'qty-smp-summer')">Buy Now</button></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: BOXPVP GOLD -->
+        <section id="box-coins-section" class="store-section">
+            <div class="section-title"><span class="box-title-prefix">BoxPvP</span> <span class="gold-title-highlight">Gold Bundles</span></div>
+            <div class="products-grid">
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="100"></div><div><div class="product-name item-gold">100 Box Gold</div><div class="product-price">$0.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('100 Box Gold', 0.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('100 Box Gold', 0.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="720"></div><div><div class="product-name item-gold">720 Box Gold</div><div class="product-price">$4.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('720 Box Gold', 4.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('720 Box Gold', 4.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="1680"></div><div><div class="product-name item-gold">1680 Box Gold</div><div class="product-price">$9.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('1680 Box Gold', 9.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('1680 Box Gold', 9.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="3600"></div><div><div class="product-name item-gold">3600 Box Gold</div><div class="product-price">$19.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('3600 Box Gold', 19.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('3600 Box Gold', 19.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="6580"></div><div><div class="product-name item-gold">6580 Box Gold</div><div class="product-price">$34.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('6580 Box Gold', 34.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('6580 Box Gold', 34.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="10k"></div><div><div class="product-name item-gold">10,000 Box Gold</div><div class="product-price">$49.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('10,000 Box Gold', 49.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('10,000 Box Gold', 49.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="16.4k"></div><div><div class="product-name item-gold">16,400 Box Gold</div><div class="product-price">$74.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('16,400 Box Gold', 74.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('16,400 Box Gold', 74.99)">Buy Now</button></div></div>
+                <div class="product-card"><div class="product-image-frame"><img src="gold.jpg" alt="22.4k"></div><div><div class="product-name item-gold">22,400 Box Gold</div><div class="product-price">$99.99</div></div><div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addToCart('22,400 Box Gold', 99.99)">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyNow('22,400 Box Gold', 99.99)">Buy Now</button></div></div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: BOXPVP KEYS -->
+        <section id="box-keys-section" class="store-section">
+            <div class="section-title"><span class="box-title-prefix">BoxPvP</span> <span class="keys-title-highlight">Keys</span></div>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image-frame"><img src="Mecha.png" alt="Mecha Key"></div>
+                    <div><div class="product-name key-mecha">Mecha Key</div><div class="product-price" id="price-box-dragon">$5.00</div></div>
+                    <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;"><label style="font-size: 0.85rem; color: var(--text-muted);" class="qty-label">Quantity:</label><input type="number" id="qty-box-dragon" min="1" value="1" class="qty-input-box" oninput="updateKeyPrice('price-box-dragon', 5.00, this.value)"></div>
+                    <div class="card-actions-row"><button class="btn-cart-action btn-add-cart" onclick="addKeyToCart('Mecha Key', 5.00, 'qty-box-dragon')">Add to Cart</button><button class="btn-buynow-action btn-buy-now" onclick="buyKeyNow('Mecha Key', 5.00, 'qty-box-dragon')">Buy Now</button></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: CUSTOM RANK BUILDER -->
+        <section id="custom-section" class="store-section">
+            <div class="section-title"><span class="custom-title-prefix">Create</span> <span class="custom-title-highlight">Custom Rank</span></div>
+            <div class="builder-wrapper">
+                <div class="builder-options-grid">
+                    <div class="builder-form-group" style="grid-column: span 2;">
+                        <label class="builder-lbl-name">Custom Rank Name (English Only)</label>
+                        <input type="text" id="customName" class="builder-input" placeholder="e.g. KING" oninput="updateCustomPreview()">
+                    </div>
+                    <div class="builder-form-group">
+                        <label class="builder-lbl-pv">Virtual Vaults /PV (Max 10) ($3.00 ea)</label>
+                        <input type="number" id="customPv" class="builder-input" min="0" max="10" value="0" oninput="calcCustomPrice()">
+                    </div>
+                    <div class="builder-form-group">
+                        <label class="builder-lbl-homes">Set Homes /sethome (Min 2 - Max 7) ($1.50 ea)</label>
+                        <input type="number" id="customHomes" class="builder-input" min="2" max="7" value="2" oninput="calcCustomPrice()">
+                    </div>
+                    <div class="builder-form-group" style="grid-column: span 2;">
+                        <label class="builder-lbl-ec">Ender Chest (/ec)</label>
+                        <select id="customEc" class="builder-select" onchange="calcCustomPrice()">
+                            <option value="0" class="ec-opt-0">None ($0.00)</option>
+                            <option value="2.00" class="ec-opt-1">Normal Enderchest ($2.00)</option>
+                            <option value="4.00" class="ec-opt-2">Double Enderchest ($4.00)</option>
+                        </select>
+                    </div>
+                    <label class="builder-checkbox-label"><input type="checkbox" id="chkAnvil" onchange="calcCustomPrice()"><span class="builder-chk-anvil">Virtual Anvil /anvil ($3.00)</span></label>
+                    <label class="builder-checkbox-label"><input type="checkbox" id="chkTags" onchange="calcCustomPrice()"><span class="builder-chk-tags">Full Access Tags ($4.00)</span></label>
+                    <label class="builder-checkbox-label"><input type="checkbox" id="chkSafeRoom" onchange="calcCustomPrice()"><span class="builder-chk-saveroom">Safe Room Area ($5.00)</span></label>
+                    <label class="builder-checkbox-label"><input type="checkbox" id="chkColor" onchange="toggleColorOptions(); calcCustomPrice();"><span class="builder-chk-color">Rank Color ($3.00)</span></label>
+                    
+                    <!-- Advanced Color Picker & Gradient Options -->
+                    <div id="colorOptionsContainer" class="color-options-box" style="grid-column: span 2; display: none;">
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 12px;">
+                            <label style="cursor: pointer;"><input type="radio" name="colorType" value="solid" checked onclick="toggleGradientMode(false)"> Solid Color</label>
+                            <label style="cursor: pointer;"><input type="radio" name="colorType" value="gradient" onclick="toggleGradientMode(true)"> Gradient Color</label>
+                        </div>
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <div>
+                                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Primary Color Code:</label>
+                                <input type="color" id="primaryRankColor" value="#fbbf24" class="color-picker-input" oninput="updateCustomPreview()">
+                            </div>
+                            <div id="secondaryColorGroup" style="display: none;">
+                                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Secondary Color Code:</label>
+                                <input type="color" id="secondaryRankColor" value="#7c3aed" class="color-picker-input" oninput="updateCustomPreview()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-dark); padding: 25px; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border);">
+                    <div>
+                        <!-- Live Color Name Preview Box -->
+                        <div style="margin-bottom: 20px; text-align: center; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; border: 1px solid var(--accent);">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 600;">Live Name Color Preview:</span>
+                            <span id="liveRankPreview" style="font-size: 1.6rem; font-weight: 800; color: #fbbf24; text-shadow: 0 0 10px rgba(0,0,0,0.8);">[KING]</span>
+                            <span id="colorHexCodeDisplay" style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 6px; font-family: monospace;">HEX: #fbbf24</span>
+                        </div>
+                        <h3 style="color: var(--text-muted); font-size: 1rem;" class="builder-total-lbl">Total Price</h3>
+                        <h2 id="customPriceDisplay" style="color: var(--accent); font-size: 2.2rem; margin-top: 10px;">$5.00</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                        <button class="btn-cart-action btn-add-cart" style="padding: 12px;" onclick="addCustomToCart()">Add to Cart</button>
+                        <button class="btn-buynow-action btn-buy-now" style="padding: 12px;" onclick="buyCustomNow()">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 8: ABOUT US -->
+        <section id="about-section" class="store-section">
+            <div class="about-card">
+                <h2 style="color: var(--accent); margin-bottom: 15px; font-size: 2rem;" class="about-title">About NashmiMC</h2>
+                <p style="color: var(--text-muted); line-height: 1.8; max-width: 800px; margin: 0 auto 20px;" class="about-desc">
+                    NashmiMC Network is an elite, independent Minecraft server community offering exceptional and balanced game modes including Survival SMP & BoxPvP.
+                </p>
+
+                <div class="about-ticket-notice">
+                    <p class="about-notice-text">💡 Orders are sent directly to Discord and processed automatically within 3 to 4 hours max. Open a ticket on Discord if you need immediate assistance!</p>
+                </div>
+
+                <div class="ip-box-container">
+                    <span class="ip-text" id="serverIp">play.nashmimc.net</span>
+                    <button class="btn-copy-ip" onclick="copyServerIp()"><i class="fa-solid fa-copy"></i> <span class="copy-btn-text">Copy</span></button>
+                </div>
+
+                <div class="social-icons-row">
+                    <a href="https://discord.gg/mB37jz6E7N" target="_blank" class="social-icon-link" title="Discord"><i class="fa-brands fa-discord"></i></a>
+                    <a href="https://www.youtube.com/@nashmi-23" target="_blank" class="social-icon-link" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="https://www.tiktok.com/@nashmimc?_r=1&_t=ZS-96Po1h39Cfl" target="_blank" class="social-icon-link" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="https://kick.com/NASHMI23" target="_blank" class="social-icon-link" title="Kick"><span class="kick-badge">K</span></a>
+                    <a href="https://www.instagram.com/" target="_blank" class="social-icon-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeCheckoutModal()"><i class="fa-solid fa-xmark"></i></button>
+
+            <!-- Important Payment Banner Top Notice -->
+            <div class="top-payment-warning-banner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div class="warning-text">
+                    <strong class="warn-title">Very important note before submitting the order:</strong>
+                    <p class="warn-desc">You must complete the payment process first, then attach the proof of purchase/transfer image before clicking submit order!</p>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent); text-align: center;" class="checkout-title">Checkout Process</h3>
+            
+            <!-- Direct Checkout Details Inputs -->
+            <div style="margin: 15px 0; display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                <div class="form-control">
+                    <label style="color: var(--text-muted); font-size: 0.85rem;">Minecraft In-Game Name (IGN):</label>
+                    <input type="text" id="checkoutIgnInput" placeholder="e.g. Player123" class="form-input">
+                </div>
+                <div class="form-control">
+                    <label style="color: var(--text-muted); font-size: 0.85rem;">Discord Username:</label>
+                    <input type="text" id="checkoutDiscordInput" placeholder="e.g. username#1234" class="form-input">
+                </div>
+                
+                <!-- Proof Image Upload Section -->
+                <div class="form-control" style="background: var(--bg-dark); padding: 12px; border-radius: 8px; border: 1px dashed var(--accent);">
+                    <label style="color: var(--accent); font-size: 0.85rem; font-weight: bold; display: flex; align-items: center; gap: 8px;" class="upload-label">
+                        <i class="fa-solid fa-image"></i> <span class="upload-title">Upload Payment Proof Image:</span>
+                    </label>
+                    <input type="file" id="checkoutProofImage" accept="image/*" class="file-input-box">
+                </div>
+            </div>
+
+            <!-- Payment Method Tabs -->
+            <div class="payment-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button type="button" class="payment-tab-btn active" id="tabPaypal" onclick="setPaymentMethod('paypal')" style="flex: 1;">
+                    <i class="fa-brands fa-paypal"></i> <span class="pay-paypal-lbl">PayPal / Credit Cards</span>
+                </button>
+                <button type="button" class="payment-tab-btn" id="tabCrypto" onclick="setPaymentMethod('crypto')" style="flex: 1;">
+                    <i class="fa-solid fa-coins"></i> <span class="pay-crypto-lbl">Crypto (USDT TRC20)</span>
+                </button>
+            </div>
+
+            <!-- PayPal Container -->
+            <div id="paypalContainer" style="margin-bottom: 20px;">
+                <div class="payment-notice-banner" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <p style="font-size: 0.85rem; margin: 0;"><strong class="pay-pp-title">PayPal & Credit Card Payment:</strong> <span class="pay-pp-desc">You can pay directly using your PayPal account or via Debit/Credit Card. Upon successful payment, your order details will be sent to Discord.</span></p>
+                </div>
+                <div id="paypal-button-container"></div>
+            </div>
+
+            <!-- Crypto Container -->
+            <div id="cryptoDetails" class="crypto-box" style="display: none; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+                <p style="font-size: 0.85rem; color: var(--accent); margin-bottom: 8px;" class="crypto-addr-lbl">Binance Wallet Address (USDT - TRC20 Network):</p>
+                <div class="wallet-address" id="walletAddr" style="background: #000; padding: 10px; border-radius: 6px; font-family: monospace; word-break: break-all; margin-bottom: 10px; border: 1px dashed var(--accent);">TL3Ka5dVzK9M5NVAedwvw3KjgERAtsTHcU</div>
+                <button type="button" id="walletCopyBtn" onclick="copyWallet()" style="background: var(--accent); border:none; padding: 6px 14px; border-radius: 6px; cursor:pointer; font-weight:bold; color: var(--bg-dark);"><i class="fa-solid fa-copy"></i> <span class="copy-wallet-text">Copy Wallet</span></button>
+            </div>
+
+            <button type="button" class="btn-cart-action form-submit-btn" id="submitBtn" style="width: 100%; padding: 14px; font-size: 1rem; background: linear-gradient(135deg, var(--accent), #d97706); border: none; border-radius: 8px; color: #121212; cursor: pointer; font-weight: bold; margin-top: 10px;" onclick="processCheckoutWebhook()">Complete Payment & Submit Order <i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Notification Popup Modal -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="notification-modal-box">
+            <div class="notification-icon" id="notifIcon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="notification-title" id="notifTitle">Thank You!</div>
+            <div class="notification-msg" id="notifMsg">Message goes here...</div>
+            <div id="notifActions" style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                <button class="btn-modal-ok" onclick="closeNotificationModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript File -->
+    <script src="script.js"></script>
+</body>
+</html>

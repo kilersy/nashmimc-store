@@ -1,1516 +1,643 @@
+/* =========================================================
+   NashmiMC Store — Frontend Script
+   ========================================================= */
+
+'use strict';
+
+/* ---------- State ---------- */
 let cart = [];
 let selectedPaymentMethod = 'paypal';
 let discountPercent = 0;
 let appliedCouponName = '';
 
-const API_URL =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:3000'
-        : 'https://nashmimc-bot.onrender.com';
+const API_URL = (() => {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+        return 'http://localhost:3000';
+    }
+    return 'https://nashmimc-bot.onrender.com';
+})();
 
-let paypalRendering = false;
 let paypalOrderState = null;
+let paypalSession = 0;
 
+const STORAGE_KEY = 'nashmi_orders';
+const MAX_HISTORY = 50;
+const MAX_PROOF_MB = 8;
+
+/* =========================================================
+   PRODUCT CATALOG (frontend mirror)
+   ========================================================= */
+const PRODUCTS = [
+    { id: 'vip_rank',      category: 'rank', title: 'VIP Rank',      price: 3.99,  image: 'vip.jpg',     nameClass: 'rank-vip',       infoTitle: 'VIP Rank Features',       infoText: 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.' },
+    { id: 'mvp_rank',      category: 'rank', title: 'MVP Rank',      price: 9.99,  image: 'mvp.jpg',     nameClass: 'rank-mvp',       infoTitle: 'MVP Rank Features',       infoText: 'Grants MVP prefix, /heal, /feed, 5 homes limit, 2 virtual vaults, and MVP kit.' },
+    { id: 'mvp_plus_rank', category: 'rank', title: 'MVP+ Rank',     price: 17.99, image: 'mvp+.jpg',    nameClass: 'rank-mvpplus',   infoTitle: 'MVP+ Rank Features',      infoText: 'Grants MVP+ prefix, /fly in lobby, /heal, /feed, 8 homes limit, 4 virtual vaults, and exclusive kit.' },
+    { id: 'nashmi_rank',   category: 'rank', title: 'NASHMI Rank',   price: 29.99, image: 'nashmi.jpg',  nameClass: 'rank-nashmi',    infoTitle: 'NASHMI Rank Features',    infoText: 'Grants custom NASHMI prefix, /fly, /workbench, /anvil, 12 homes, 6 virtual vaults, and elite kit.' },
+    { id: 'nashmi_plus',   category: 'rank', title: 'NASHMI+ Rank',  price: 59.99, image: 'nashmi+.jpg', nameClass: 'rank-nashmiplus', infoTitle: 'NASHMI+ Rank Features',  infoText: 'Grants ultimate NASHMI+ prefix, all commands unlocked, /fly, /heal, /feed, /anvil, /ec, 20 homes, 10 virtual vaults, and legendary kit.' },
+
+    { id: 'smp_money_100k', category: 'smp_money', title: '100k SMP Money', price: 0.99,  image: 'money.jpg', nameClass: 'item-money' },
+    { id: 'smp_money_300k', category: 'smp_money', title: '300k SMP Money', price: 2.49,  image: 'money.jpg', nameClass: 'item-money' },
+    { id: 'smp_money_500k', category: 'smp_money', title: '500k SMP Money', price: 4.99,  image: 'money.jpg', nameClass: 'item-money' },
+    { id: 'smp_money_1m',   category: 'smp_money', title: '1M SMP Money',   price: 9.99,  image: 'money.jpg', nameClass: 'item-money' },
+    { id: 'smp_money_3m',   category: 'smp_money', title: '3M SMP Money',   price: 24.99, image: 'money.jpg', nameClass: 'item-money' },
+    { id: 'smp_money_5m',   category: 'smp_money', title: '5M SMP Money',   price: 49.99, image: 'money.jpg', nameClass: 'item-money' },
+    { id: 'smp_money_10m',  category: 'smp_money', title: '10M SMP Money',  price: 74.99, image: 'money.jpg', nameClass: 'item-money' },
+
+    { id: 'smp_gold_100',   category: 'smp_gold', title: '100 SMP Gold',     price: 0.99,  image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_720',   category: 'smp_gold', title: '720 SMP Gold',     price: 4.99,  image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_1680',  category: 'smp_gold', title: '1680 SMP Gold',    price: 9.99,  image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_3600',  category: 'smp_gold', title: '3600 SMP Gold',    price: 19.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_6580',  category: 'smp_gold', title: '6580 SMP Gold',    price: 34.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_10k',   category: 'smp_gold', title: '10,000 SMP Gold',  price: 49.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_16600', category: 'smp_gold', title: '16,600 SMP Gold',  price: 74.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'smp_gold_22400', category: 'smp_gold', title: '22,400 SMP Gold',  price: 99.99, image: 'gold.jpg', nameClass: 'item-gold' },
+
+    { id: 'smp_key_doom',   category: 'smp_key', title: 'DOOM key',   price: 2.49, image: 'doom_key.jpg',   nameClass: 'key-doom',   hasQty: true },
+    { id: 'smp_key_magma',  category: 'smp_key', title: 'MAGMA Key',  price: 4.99, image: 'magma_Key.jpg',  nameClass: 'key-magma',  hasQty: true },
+    { id: 'smp_key_mythic', category: 'smp_key', title: 'MYTHIC Key', price: 9.99, image: 'mythic_key.jpg', nameClass: 'key-mythic', hasQty: true },
+
+    { id: 'box_gold_100',   category: 'box_gold', title: '100 Box Gold',     price: 0.99,  image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_720',   category: 'box_gold', title: '720 Box Gold',     price: 4.99,  image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_1680',  category: 'box_gold', title: '1680 Box Gold',    price: 9.99,  image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_3600',  category: 'box_gold', title: '3600 Box Gold',    price: 19.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_6580',  category: 'box_gold', title: '6580 Box Gold',    price: 34.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_10k',   category: 'box_gold', title: '10,000 Box Gold',  price: 49.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_16400', category: 'box_gold', title: '16,400 Box Gold',  price: 74.99, image: 'gold.jpg', nameClass: 'item-gold' },
+    { id: 'box_gold_22400', category: 'box_gold', title: '22,400 Box Gold',  price: 99.99, image: 'gold.jpg', nameClass: 'item-gold' },
+
+    { id: 'box_key_mecha', category: 'box_key', title: 'Mecha Key', price: 5.00, image: 'Mecha.png', nameClass: 'key-mecha', hasQty: true }
+];
+
+/* =========================================================
+   INIT
+   ========================================================= */
 document.addEventListener('DOMContentLoaded', () => {
-    initDropdowns();
+    renderAllProducts();
+    initNavigation();
+    initDrawers();
+    initCartActions();
+    initCustomBuilder();
+    initCheckoutActions();
+    initTrackingActions();
+    initCopyButtons();
+    initEscapeAndOverlay();
+    initPaymentTabs();
+    initSubmitButton();
     renderUserOrders();
 
-    // مزامنة حالة الطلبات كل 5 ثوانٍ
-    setInterval(syncOrdersFromServer, 5000);
+    setInterval(syncOrdersFromServer, 30000);
 });
 
-function initDropdowns() {
-    const smpNavBtn = document.getElementById('smpNavBtn');
-    const smpDropdown = document.getElementById('smpDropdown');
-
-    const boxNavBtn = document.getElementById('boxNavBtn');
-    const boxDropdown = document.getElementById('boxDropdown');
-
-    if (smpNavBtn && smpDropdown) {
-        smpNavBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-
-            if (boxDropdown) {
-                boxDropdown.classList.remove('show');
-            }
-
-            smpDropdown.classList.toggle('show');
+/* =========================================================
+   PRODUCTS
+   ========================================================= */
+function renderAllProducts() {
+    document.querySelectorAll('.products-grid[data-category]').forEach(grid => {
+        const category = grid.dataset.category;
+        const items = PRODUCTS.filter(p => p.category === category);
+        grid.innerHTML = '';
+        items.forEach(product => {
+            grid.appendChild(buildProductCard(product));
         });
-    }
+    });
+}
 
-    if (boxNavBtn && boxDropdown) {
-        boxNavBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+function buildProductCard(product) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
 
-            if (smpDropdown) {
-                smpDropdown.classList.remove('show');
-            }
+    const frame = document.createElement('div');
+    frame.className = 'product-image-frame';
+    const img = document.createElement('img');
+    img.src = product.image;
+    img.alt = product.title;
+    img.loading = 'lazy';
+    frame.appendChild(img);
 
-            boxDropdown.classList.toggle('show');
+    const info = document.createElement('div');
+    const nameRow = document.createElement('div');
+    nameRow.className = 'product-name-row';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'product-name ' + (product.nameClass || '');
+    nameEl.textContent = product.title;
+    nameRow.appendChild(nameEl);
+
+    if (product.infoTitle && product.infoText) {
+        const infoBtn = document.createElement('span');
+        infoBtn.className = 'rank-info-btn';
+        infoBtn.textContent = '?';
+        infoBtn.title = 'Rank Info';
+        infoBtn.addEventListener('click', () => {
+            showNotification(
+                '<i class="fa-solid fa-crown accent-icon"></i>',
+                product.infoTitle,
+                product.infoText
+            );
         });
+        nameRow.appendChild(infoBtn);
     }
 
-    document.addEventListener('click', () => {
-        if (smpDropdown) {
-            smpDropdown.classList.remove('show');
-        }
+    info.appendChild(nameRow);
 
-        if (boxDropdown) {
-            boxDropdown.classList.remove('show');
-        }
-    });
-}
+    const priceEl = document.createElement('div');
+    priceEl.className = 'product-price';
+    priceEl.textContent = '$' + product.price.toFixed(2);
+    info.appendChild(priceEl);
 
-function switchSection(sectionId) {
-    document
-        .querySelectorAll('.store-section')
-        .forEach(sec => sec.classList.remove('active'));
+    let getQty = () => 1;
 
-    const target = document.getElementById(sectionId);
+    if (product.hasQty) {
+        const qtyRow = document.createElement('div');
+        qtyRow.className = 'qty-row';
 
-    if (target) {
-        target.classList.add('active');
+        const qtyLabel = document.createElement('label');
+        qtyLabel.className = 'qty-label';
+        qtyLabel.textContent = 'Quantity:';
 
-        window.scrollTo({
-            top: 300,
-            behavior: 'smooth'
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.className = 'qty-input-box';
+        qtyInput.min = '1';
+        qtyInput.value = '1';
+
+        qtyInput.addEventListener('input', () => {
+            const q = Math.max(1, parseInt(qtyInput.value) || 1);
+            priceEl.textContent = '$' + (product.price * q).toFixed(2);
         });
-    }
-}
 
-function toggleCartDrawer() {
-    const cartDrawer = document.getElementById('cartDrawer');
+        qtyRow.appendChild(qtyLabel);
+        qtyRow.appendChild(qtyInput);
+        info.appendChild(qtyRow);
 
-    if (cartDrawer) {
-        cartDrawer.classList.toggle('active');
-    }
-}
-
-function toggleNavDrawer() {
-    const sideDrawer = document.getElementById('sideDrawer');
-
-    if (sideDrawer) {
-        sideDrawer.classList.toggle('active');
-    }
-}
-
-function toggleColorOptions() {
-    const checked =
-        document.getElementById('chkColor')?.checked;
-
-    const container =
-        document.getElementById('colorOptionsContainer');
-
-    if (container) {
-        container.style.display =
-            checked ? 'block' : 'none';
+        getQty = () => Math.max(1, parseInt(qtyInput.value) || 1);
     }
 
-    updateCustomPreview();
-}
+    card.appendChild(frame);
+    card.appendChild(info);
 
-function toggleGradientMode(isGradient) {
-    const secGroup =
-        document.getElementById('secondaryColorGroup');
+    const actions = document.createElement('div');
+    actions.className = 'card-actions-row';
 
-    if (secGroup) {
-        secGroup.style.display =
-            isGradient ? 'block' : 'none';
-    }
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-cart-action';
+    addBtn.textContent = 'Add to Cart';
+    addBtn.addEventListener('click', () => addProductToCart(product, getQty()));
 
-    updateCustomPreview();
-}
-
-function updateCustomPreview() {
-    const nameInput =
-        document.getElementById('customName')
-            ?.value.trim() || 'KING';
-
-    const previewEl =
-        document.getElementById('liveRankPreview');
-
-    const colorHexCodeDisplay =
-        document.getElementById('colorHexCodeDisplay');
-
-    const chkColor =
-        document.getElementById('chkColor')?.checked;
-
-    if (!previewEl) {
-        return;
-    }
-
-    if (!chkColor) {
-        previewEl.style.background = 'none';
-        previewEl.style.color = '#fbbf24';
-        previewEl.style.webkitBackgroundClip = 'initial';
-        previewEl.style.webkitTextFillColor = 'initial';
-        previewEl.innerText =
-            `[${nameInput.toUpperCase()}]`;
-
-        if (colorHexCodeDisplay) {
-            colorHexCodeDisplay.innerText =
-                'Color Styling: Default (#fbbf24)';
-        }
-
-        calcCustomPrice();
-        return;
-    }
-
-    const isGradient =
-        document.querySelector(
-            'input[name="colorType"]:checked'
-        )?.value === 'gradient';
-
-    const pColor =
-        document.getElementById('primaryRankColor')
-            ?.value || '#ffffff';
-
-    if (isGradient) {
-        const sColor =
-            document.getElementById('secondaryRankColor')
-                ?.value || '#ffffff';
-
-        previewEl.style.background =
-            `linear-gradient(90deg, ${pColor}, ${sColor})`;
-
-        previewEl.style.webkitBackgroundClip = 'text';
-        previewEl.style.webkitTextFillColor = 'transparent';
-
-        previewEl.innerText =
-            `[${nameInput.toUpperCase()}]`;
-
-        if (colorHexCodeDisplay) {
-            colorHexCodeDisplay.innerText =
-                `Gradient HEX: ${pColor} ➔ ${sColor}`;
-        }
-    } else {
-        previewEl.style.background = 'none';
-        previewEl.style.color = pColor;
-        previewEl.style.webkitBackgroundClip = 'initial';
-        previewEl.style.webkitTextFillColor = 'initial';
-
-        previewEl.innerText =
-            `[${nameInput.toUpperCase()}]`;
-
-        if (colorHexCodeDisplay) {
-            colorHexCodeDisplay.innerText =
-                `Solid HEX Code: ${pColor}`;
-        }
-    }
-
-    calcCustomPrice();
-}
-
-function calcCustomPrice() {
-    let price = 5.00;
-
-    const pv =
-        parseInt(
-            document.getElementById('customPv')?.value
-        ) || 0;
-
-    const homes =
-        parseInt(
-            document.getElementById('customHomes')?.value
-        ) || 2;
-
-    const ecPrice =
-        parseFloat(
-            document.getElementById('customEc')?.value
-        ) || 0;
-
-    price += pv * 3.00;
-
-    if (homes > 2) {
-        price += (homes - 2) * 1.50;
-    }
-
-    price += ecPrice;
-
-    if (
-        document.getElementById('chkAnvil')
-            ?.checked
-    ) {
-        price += 3.00;
-    }
-
-    if (
-        document.getElementById('chkTags')
-            ?.checked
-    ) {
-        price += 4.00;
-    }
-
-    if (
-        document.getElementById('chkSafeRoom')
-            ?.checked
-    ) {
-        price += 5.00;
-    }
-
-    if (
-        document.getElementById('chkColor')
-            ?.checked
-    ) {
-        price += 3.00;
-    }
-
-    const display =
-        document.getElementById('customPriceDisplay');
-
-    if (display) {
-        display.innerText =
-            `$${price.toFixed(2)}`;
-    }
-
-    return price;
-}
-
-function getCustomRankDetails() {
-    const rawName =
-        document.getElementById('customName')
-            ?.value.trim()
-            .toUpperCase() || 'KING';
-
-    const pv =
-        document.getElementById('customPv')
-            ?.value || 0;
-
-    const homes =
-        document.getElementById('customHomes')
-            ?.value || 2;
-
-    const ecSelect =
-        document.getElementById('customEc');
-
-    const ecText =
-        ecSelect
-            ? ecSelect.options[
-                  ecSelect.selectedIndex
-              ].text
-            : 'None';
-
-    const anvil =
-        document.getElementById('chkAnvil')
-            ?.checked
-            ? 'Yes'
-            : 'No';
-
-    const tags =
-        document.getElementById('chkTags')
-            ?.checked
-            ? 'Yes'
-            : 'No';
-
-    const safeRoom =
-        document.getElementById('chkSafeRoom')
-            ?.checked
-            ? 'Yes'
-            : 'No';
-
-    const hasColor =
-        document.getElementById('chkColor')
-            ?.checked;
-
-    let colorInfo =
-        'Default Accent Color';
-
-    if (hasColor) {
-        const isGradient =
-            document.querySelector(
-                'input[name="colorType"]:checked'
-            )?.value === 'gradient';
-
-        const pColor =
-            document.getElementById(
-                'primaryRankColor'
-            )?.value || '#ffffff';
-
-        if (isGradient) {
-            const sColor =
-                document.getElementById(
-                    'secondaryRankColor'
-                )?.value || '#ffffff';
-
-            colorInfo =
-                `Gradient (${pColor} to ${sColor})`;
-        } else {
-            colorInfo =
-                `Solid (${pColor})`;
-        }
-    }
-
-    return {
-        name: rawName,
-        details:
-            `Rank Name: [${rawName}] | Color: ${colorInfo} | PVs: ${pv} | Homes: ${homes} | EC: ${ecText} | Anvil: ${anvil} | Tags: ${tags} | SafeRoom: ${safeRoom}`
-    };
-}
-
-function addCustomToCart() {
-    const rankObj =
-        getCustomRankDetails();
-
-    const price =
-        calcCustomPrice();
-
-    cart.push({
-        title:
-            `Custom Rank: [${rankObj.name}]`,
-        price,
-        details:
-            rankObj.details
+    const buyBtn = document.createElement('button');
+    buyBtn.type = 'button';
+    buyBtn.className = 'btn-buynow-action';
+    buyBtn.textContent = 'Buy Now';
+    buyBtn.addEventListener('click', () => {
+        addProductToCart(product, getQty());
+        openCheckoutModal();
     });
 
-    updateCartUI();
-    toggleCartDrawer();
+    actions.appendChild(addBtn);
+    actions.appendChild(buyBtn);
+    card.appendChild(actions);
+
+    return card;
 }
 
-function buyCustomNow() {
-    const rankObj =
-        getCustomRankDetails();
+function addProductToCart(product, qty) {
+    const safeQty = Math.max(1, parseInt(qty) || 1);
+    const title = safeQty > 1 ? `${safeQty}x ${product.title}` : product.title;
+    const totalPrice = Number((product.price * safeQty).toFixed(2));
 
-    const price =
-        calcCustomPrice();
-
-    cart.push({
-        title:
-            `Custom Rank: [${rankObj.name}]`,
-        price,
-        details:
-            rankObj.details
-    });
-
-    updateCartUI();
-    openCheckoutModal();
-}
-
-function addToCart(title, price) {
-    const safePrice =
-        Number(price);
-
-    if (
-        !title ||
-        !Number.isFinite(safePrice) ||
-        safePrice <= 0
-    ) {
-        return;
-    }
-
-    cart.push({
-        title,
-        price: safePrice
-    });
-
+    cart.push({ title, price: totalPrice });
     updateCartUI();
 
     showNotification(
         '<i class="fa-solid fa-cart-plus"></i>',
         'Added to Cart',
-        `<strong>${title}</strong> has been added to your shopping cart.`
+        `${escapeHtml(title)} has been added to your cart.`
     );
 }
 
-function buyNow(title, price) {
-    const safePrice =
-        Number(price);
-
-    if (
-        !title ||
-        !Number.isFinite(safePrice) ||
-        safePrice <= 0
-    ) {
-        return;
-    }
-
-    cart.push({
-        title,
-        price: safePrice
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+function initNavigation() {
+    document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+        item.addEventListener('click', () => switchSection(item.dataset.section));
     });
 
-    updateCartUI();
-    openCheckoutModal();
-}
-
-function updateKeyPrice(priceElemId, unitPrice, qty) {
-    const safeQty =
-        Math.max(
-            1,
-            parseInt(qty) || 1
-        );
-
-    const safeUnitPrice =
-        Number(unitPrice) || 0;
-
-    const total =
-        (
-            safeUnitPrice *
-            safeQty
-        ).toFixed(2);
-
-    const elem =
-        document.getElementById(
-            priceElemId
-        );
-
-    if (elem) {
-        elem.innerText =
-            `$${total}`;
-    }
-}
-
-function addKeyToCart(
-    keyName,
-    unitPrice,
-    qtyInputId
-) {
-    const qtyInput =
-        document.getElementById(
-            qtyInputId
-        );
-
-    const qty =
-        Math.max(
-            1,
-            parseInt(qtyInput?.value) || 1
-        );
-
-    const safeUnitPrice =
-        Number(unitPrice) || 0;
-
-    const totalPrice =
-        safeUnitPrice * qty;
-
-    cart.push({
-        title:
-            `${qty}x ${keyName}`,
-        price:
-            totalPrice
+    document.querySelectorAll('.drawer-links a[data-section]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchSection(link.dataset.section);
+            closeDrawer(document.getElementById('sideDrawer'));
+        });
     });
 
-    updateCartUI();
-
-    showNotification(
-        '<i class="fa-solid fa-key"></i>',
-        'Keys Added',
-        `Added ${qty}x ${keyName} to your cart.`
-    );
-}
-
-function buyKeyNow(
-    keyName,
-    unitPrice,
-    qtyInputId
-) {
-    const qtyInput =
-        document.getElementById(
-            qtyInputId
-        );
-
-    const qty =
-        Math.max(
-            1,
-            parseInt(qtyInput?.value) || 1
-        );
-
-    const safeUnitPrice =
-        Number(unitPrice) || 0;
-
-    const totalPrice =
-        safeUnitPrice * qty;
-
-    cart.push({
-        title:
-            `${qty}x ${keyName}`,
-        price:
-            totalPrice
+    document.querySelectorAll('.dropdown-item[data-section]').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchSection(item.dataset.section);
+            closeAllDropdowns();
+        });
     });
 
-    updateCartUI();
-    openCheckoutModal();
+    initDropdowns();
 }
 
-function updateCartUI() {
-    const container =
-        document.getElementById(
-            'cartItemsContainer'
-        );
+function initDropdowns() {
+    const smpBtn = document.getElementById('smpNavBtn');
+    const smpDropdown = document.getElementById('smpDropdown');
+    const boxBtn = document.getElementById('boxNavBtn');
+    const boxDropdown = document.getElementById('boxDropdown');
 
-    const countEl =
-        document.getElementById(
-            'cart-count'
-        );
-
-    const totalEl =
-        document.getElementById(
-            'cartTotalDisplay'
-        );
-
-    if (
-        !container ||
-        !countEl ||
-        !totalEl
-    ) {
-        return;
+    if (smpBtn && smpDropdown) {
+        smpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (boxDropdown) boxDropdown.classList.remove('show');
+            smpDropdown.classList.toggle('show');
+        });
     }
 
-    container.innerHTML = '';
+    if (boxBtn && boxDropdown) {
+        boxBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (smpDropdown) smpDropdown.classList.remove('show');
+            boxDropdown.classList.toggle('show');
+        });
+    }
 
-    countEl.innerText =
-        cart.length;
-
-    let subtotal = 0;
-
-    cart.forEach(
-        (item, index) => {
-            const itemPrice =
-                Number(item.price) || 0;
-
-            subtotal += itemPrice;
-
-            const itemCard =
-                document.createElement(
-                    'div'
-                );
-
-            itemCard.className =
-                'cart-item-card';
-
-            itemCard.innerHTML = `
-                <div class="cart-item-info">
-                    <span class="cart-item-title">
-                        ${escapeHtml(item.title)}
-                    </span>
-
-                    <span class="cart-item-price">
-                        $${itemPrice.toFixed(2)}
-                    </span>
-                </div>
-
-                <button
-                    class="cart-item-remove"
-                    onclick="removeFromCart(${index})"
-                >
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            `;
-
-            container.appendChild(
-                itemCard
-            );
-        }
-    );
-
-    const finalTotal =
-        subtotal *
-        (1 - discountPercent / 100);
-
-    totalEl.innerText =
-        `$${finalTotal.toFixed(2)}`;
+    document.addEventListener('click', closeAllDropdowns);
 }
 
-function removeFromCart(index) {
-    if (
-        index < 0 ||
-        index >= cart.length
-    ) {
-        return;
+function closeAllDropdowns() {
+    document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+}
+
+function switchSection(sectionId) {
+    document.querySelectorAll('.store-section').forEach(sec => sec.classList.remove('active'));
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.classList.add('active');
+        window.scrollTo({ top: 300, behavior: 'smooth' });
     }
+}
 
-    cart.splice(index, 1);
+/* =========================================================
+   DRAWERS
+   ========================================================= */
+function initDrawers() {
+    document.getElementById('cartToggleBtn')?.addEventListener('click', () => {
+        document.getElementById('cartDrawer')?.classList.toggle('active');
+    });
+    document.getElementById('cartCloseBtn')?.addEventListener('click', () => {
+        document.getElementById('cartDrawer')?.classList.remove('active');
+    });
+    document.getElementById('navToggleBtn')?.addEventListener('click', () => {
+        document.getElementById('sideDrawer')?.classList.toggle('active');
+    });
+    document.getElementById('navCloseBtn')?.addEventListener('click', () => {
+        document.getElementById('sideDrawer')?.classList.remove('active');
+    });
+}
 
-    updateCartUI();
+function closeDrawer(el) {
+    if (el) el.classList.remove('active');
+}
+
+/* =========================================================
+   CART
+   ========================================================= */
+function initCartActions() {
+    document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+    document.getElementById('couponApplyBtn')?.addEventListener('click', applyCoupon);
+    document.getElementById('checkoutBtn')?.addEventListener('click', openCheckoutModal);
 }
 
 function clearCart() {
-    cart = [];
-
-    discountPercent = 0;
-    appliedCouponName = '';
-
-    const couponInput =
-        document.getElementById(
-            'couponCodeInput'
-        );
-
-    const msg =
-        document.getElementById(
-            'couponMsg'
-        );
-
-    if (couponInput) {
-        couponInput.value = '';
+    if (cart.length === 0) {
+        showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Empty Cart', 'Your cart is already empty.');
+        return;
     }
 
-    if (msg) {
-        msg.innerText = '';
-    }
+    showConfirmNotification(
+        '<i class="fa-solid fa-trash"></i>',
+        'Clear Cart?',
+        'This will remove all items from your cart. The coupon will remain applied.',
+        () => {
+            cart = [];
+            updateCartUI();
+            showNotification('<i class="fa-solid fa-check"></i>', 'Cart Cleared', 'All items have been removed.');
+        }
+    );
+}
 
+function updateCartUI() {
+    const container = document.getElementById('cartItemsContainer');
+    const countEl = document.getElementById('cart-count');
+    const totalEl = document.getElementById('cartTotalDisplay');
+    if (!container || !countEl || !totalEl) return;
+
+    container.innerHTML = '';
+    countEl.textContent = String(cart.length);
+
+    let subtotal = 0;
+
+    cart.forEach((item, index) => {
+        const itemPrice = Number(item.price) || 0;
+        subtotal += itemPrice;
+
+        const itemCard = document.createElement('div');
+        itemCard.className = 'cart-item-card';
+
+        const info = document.createElement('div');
+        info.className = 'cart-item-info';
+
+        const titleEl = document.createElement('span');
+        titleEl.className = 'cart-item-title';
+        titleEl.textContent = item.title;
+
+        const priceEl = document.createElement('span');
+        priceEl.className = 'cart-item-price';
+        priceEl.textContent = '$' + itemPrice.toFixed(2);
+
+        info.appendChild(titleEl);
+        info.appendChild(priceEl);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'cart-item-remove';
+        removeBtn.setAttribute('aria-label', 'Remove item');
+        removeBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        removeBtn.addEventListener('click', () => removeFromCart(index));
+
+        itemCard.appendChild(info);
+        itemCard.appendChild(removeBtn);
+        container.appendChild(itemCard);
+    });
+
+    const finalTotal = subtotal * (1 - discountPercent / 100);
+    totalEl.textContent = '$' + finalTotal.toFixed(2);
+}
+
+function removeFromCart(index) {
+    if (index < 0 || index >= cart.length) return;
+    cart.splice(index, 1);
     updateCartUI();
 }
 
 function applyCoupon() {
-    const code =
-        document.getElementById(
-            'couponCodeInput'
-        )?.value
-            .trim()
-            .toUpperCase();
+    const codeInput = document.getElementById('couponCodeInput');
+    const msg = document.getElementById('couponMsg');
+    if (!codeInput || !msg) return;
 
-    const msg =
-        document.getElementById(
-            'couponMsg'
-        );
-
-    if (!msg) {
-        return;
-    }
+    const code = (codeInput.value || '').trim().toUpperCase();
 
     if (code === 'NASHMI2026') {
         discountPercent = 15;
         appliedCouponName = code;
-
-        msg.style.color =
-            'var(--success)';
-
-        msg.innerText =
-            'Coupon NASHMI2026 applied! (15% OFF)';
+        msg.style.color = 'var(--success)';
+        msg.textContent = 'Coupon NASHMI2026 applied! (15% OFF)';
     } else {
         discountPercent = 0;
         appliedCouponName = '';
-
-        msg.style.color =
-            'var(--danger)';
-
-        msg.innerText =
-            'Invalid Coupon Code!';
+        msg.style.color = 'var(--danger)';
+        msg.textContent = 'Invalid Coupon Code!';
     }
 
     updateCartUI();
 }
 
+/* =========================================================
+   CHECKOUT MODAL
+   ========================================================= */
+function initCheckoutActions() {
+    document.getElementById('checkoutCloseBtn')?.addEventListener('click', closeCheckoutModal);
+}
+
 function openCheckoutModal() {
     if (cart.length === 0) {
-        showNotification(
-            '<i class="fa-solid fa-circle-exclamation"></i>',
-            'Empty Cart',
-            'Your shopping cart is empty.'
-        );
-
+        showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Empty Cart', 'Your shopping cart is empty.');
         return;
     }
 
-    const modal =
-        document.getElementById(
-            'checkoutModal'
-        );
+    const modal = document.getElementById('checkoutModal');
+    if (modal) modal.classList.add('open');
 
-    if (modal) {
-        modal.style.display =
-            'flex';
-    }
-
-    setPaymentMethod(
-        selectedPaymentMethod
-    );
+    setPaymentMethod(selectedPaymentMethod);
 }
 
 function closeCheckoutModal() {
-    const modal =
-        document.getElementById(
-            'checkoutModal'
-        );
+    const modal = document.getElementById('checkoutModal');
+    if (modal) modal.classList.remove('open');
+    paypalSession++;
+}
 
-    if (modal) {
-        modal.style.display =
-            'none';
-    }
+/* =========================================================
+   PAYMENT TABS
+   ========================================================= */
+function initPaymentTabs() {
+    document.getElementById('tabPaypal')?.addEventListener('click', () => setPaymentMethod('paypal'));
+    document.getElementById('tabCrypto')?.addEventListener('click', () => setPaymentMethod('crypto'));
 }
 
 function setPaymentMethod(method) {
-    selectedPaymentMethod =
-        method === 'crypto'
-            ? 'crypto'
-            : 'paypal';
+    selectedPaymentMethod = method === 'crypto' ? 'crypto' : 'paypal';
 
-    const tabPaypal =
-        document.getElementById(
-            'tabPaypal'
-        );
+    const tabPaypal = document.getElementById('tabPaypal');
+    const tabCrypto = document.getElementById('tabCrypto');
+    const paypalContainer = document.getElementById('paypalContainer');
+    const cryptoDetails = document.getElementById('cryptoDetails');
+    const proofContainer = document.getElementById('proofUploadContainer');
 
-    const tabCrypto =
-        document.getElementById(
-            'tabCrypto'
-        );
+    if (tabPaypal) tabPaypal.classList.toggle('active', selectedPaymentMethod === 'paypal');
+    if (tabCrypto) tabCrypto.classList.toggle('active', selectedPaymentMethod === 'crypto');
+    if (paypalContainer) paypalContainer.style.display = selectedPaymentMethod === 'paypal' ? 'block' : 'none';
+    if (cryptoDetails) cryptoDetails.style.display = selectedPaymentMethod === 'crypto' ? 'block' : 'none';
 
-    const paypalContainer =
-        document.getElementById(
-            'paypalContainer'
-        );
-
-    const cryptoDetails =
-        document.getElementById(
-            'cryptoDetails'
-        );
-
-    if (tabPaypal) {
-        tabPaypal.classList.toggle(
-            'active',
-            selectedPaymentMethod === 'paypal'
-        );
+    // Show proof upload ONLY for crypto
+    if (proofContainer) {
+        proofContainer.style.display = selectedPaymentMethod === 'crypto' ? 'block' : 'none';
     }
 
-    if (tabCrypto) {
-        tabCrypto.classList.toggle(
-            'active',
-            selectedPaymentMethod === 'crypto'
-        );
+    // Reset file input when switching to PayPal
+    if (selectedPaymentMethod === 'paypal') {
+        const fileInput = document.getElementById('checkoutProofImage');
+        if (fileInput) fileInput.value = '';
     }
 
-    if (paypalContainer) {
-        paypalContainer.style.display =
-            selectedPaymentMethod === 'paypal'
-                ? 'block'
-                : 'none';
-    }
-
-    if (cryptoDetails) {
-        cryptoDetails.style.display =
-            selectedPaymentMethod === 'crypto'
-                ? 'block'
-                : 'none';
-    }
-
-    if (
-        selectedPaymentMethod === 'paypal'
-    ) {
-        setCheckoutBusy(
-            false,
-            'Complete Payment & Submit Order'
-        );
-
+    if (selectedPaymentMethod === 'paypal') {
         renderPayPalButtons();
     } else {
-        const paypalButtonContainer =
-            document.getElementById(
-                'paypal-button-container'
-            );
-
-        if (paypalButtonContainer) {
-            paypalButtonContainer.innerHTML =
-                '';
-        }
-
-        paypalOrderState =
-            null;
-
-        setCheckoutBusy(
-            false,
-            'Complete Payment & Submit Order'
-        );
+        const ppc = document.getElementById('paypal-button-container');
+        if (ppc) ppc.innerHTML = '';
+        paypalOrderState = null;
     }
 }
 
-async function apiRequest(
-    path,
-    options = {}
-) {
-    const controller =
-        new AbortController();
+/* =========================================================
+   PAYPAL
+   ========================================================= */
+async function renderPayPalButtons() {
+    const container = document.getElementById('paypal-button-container');
+    if (!container) return;
+    if (selectedPaymentMethod !== 'paypal') return;
 
-    const timeoutId =
-        setTimeout(
-            () => controller.abort(),
-            30000
-        );
+    if (typeof paypal === 'undefined') {
+        container.innerHTML = '<p class="paypal-error">PayPal is currently unavailable. Please refresh the page.</p>';
+        return;
+    }
+
+    const session = ++paypalSession;
+    container.innerHTML = '';
 
     try {
-        const response =
-            await fetch(
-                `${API_URL}${path}`,
-                {
-                    ...options,
-
-                    headers: {
-                        Accept:
-                            'application/json',
-
-                        ...(options.headers || {})
-                    },
-
-                    mode:
-                        'cors',
-
-                    signal:
-                        controller.signal
-                }
-            );
-
-        const contentType =
-            response.headers.get(
-                'content-type'
-            ) || '';
-
-        let data;
-
-        if (
-            contentType.includes(
-                'application/json'
-            )
-        ) {
-            data =
-                await response.json();
-        } else {
-            const text =
-                await response.text();
-
-            data =
-                text
-                    ? { message: text }
-                    : {};
-        }
-
-        if (!response.ok) {
-            const message =
-                data?.error ||
-                data?.message ||
-                `Server returned HTTP ${response.status}`;
-
-            throw new Error(
-                message
-            );
-        }
-
-        return data;
-
-    } catch (error) {
-        if (
-            error?.name ===
-            'AbortError'
-        ) {
-            throw new Error(
-                'The store server took too long to respond. Please try again.'
-            );
-        }
-
-        if (
-            error instanceof TypeError
-        ) {
-            throw new Error(
-                'Could not connect to the store server. Check the backend URL and CORS settings.'
-            );
-        }
-
-        throw error;
-
-    } finally {
-        clearTimeout(
-            timeoutId
-        );
-    }
-}
-
-function getCheckoutCustomer() {
-    const ignInput =
-        document.getElementById(
-            'checkoutIgnInput'
-        );
-
-    const discordInput =
-        document.getElementById(
-            'checkoutDiscordInput'
-        );
-
-    const ign =
-        ignInput?.value.trim() || '';
-
-    const discordUser =
-        discordInput?.value.trim() || '';
-
-    if (!ign) {
-        showNotification(
-            '<i class="fa-solid fa-triangle-exclamation"></i>',
-            'Minecraft Name Required',
-            'Please enter your Minecraft In-Game Name (IGN) before continuing.'
-        );
-
-        ignInput?.focus();
-
-        return null;
-    }
-
-    if (!discordUser) {
-        showNotification(
-            '<i class="fa-solid fa-triangle-exclamation"></i>',
-            'Discord Username Required',
-            'Please enter your Discord username before continuing.'
-        );
-
-        discordInput?.focus();
-
-        return null;
-    }
-
-    return {
-        ign,
-        discordUser
-    };
-}
-
-function getCartFinalTotal() {
-    const subtotal =
-        cart.reduce(
-            (sum, item) => {
-                const price =
-                    Number(item.price);
-
-                return (
-                    sum +
-                    (
-                        Number.isFinite(
-                            price
-                        )
-                            ? price
-                            : 0
-                    )
-                );
+        const buttons = paypal.Buttons({
+            style: {
+                layout: 'vertical',
+                shape: 'rect',
+                label: 'paypal',
+                height: 45
             },
-            0
-        );
 
-    return Number(
-        (
-            subtotal *
-            (1 -
-                discountPercent /
-                    100)
-        ).toFixed(2)
-    );
-}
+            onClick: (data, actions) => {
+                const customer = getCheckoutCustomer();
+                if (!customer) return actions.reject();
+                return actions.resolve();
+            },
 
-function getServerCart() {
-    return cart.map(item => ({
-        title:
-            String(
-                item.title || ''
-            ).trim(),
+            createOrder: async () => {
+                try {
+                    const customer = getCheckoutCustomer();
+                    if (!customer) throw new Error('Customer information is required.');
+                    if (cart.length === 0) throw new Error('Your shopping cart is empty.');
 
-        price:
-            Number(
-                Number(item.price || 0)
-                    .toFixed(2)
-            ),
+                    const clientOrderId = makeClientOrderId();
 
-        ...(item.details
-            ? {
-                  details:
-                      String(
-                          item.details
-                      )
-              }
-            : {})
-    }));
-}
+                    const result = await apiRequest('/api/paypal/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            clientOrderId,
+                            ign: customer.ign,
+                            discordUser: customer.discordUser,
+                            items: getServerCart(),
+                            couponCode: appliedCouponName || null
+                        })
+                    });
 
-function readPaymentProof() {
-    return new Promise(
-        (resolve, reject) => {
-            const proofInput =
-                document.getElementById(
-                    'checkoutProofImage'
+                    const paypalOrderId = result?.orderID || result?.orderId || result?.id;
+                    if (!paypalOrderId) throw new Error(result?.error || 'Server did not return PayPal Order ID.');
+
+                    paypalOrderState = { paypalOrderId, clientOrderId };
+                    return paypalOrderId;
+                } catch (error) {
+                    showNotification(
+                        '<i class="fa-solid fa-circle-exclamation"></i>',
+                        'PayPal Error',
+                        error.message || 'Unable to create the PayPal order.'
+                    );
+                    throw error;
+                }
+            },
+
+            onApprove: async (data) => {
+                try {
+                    const customer = getCheckoutCustomer();
+                    if (!customer) return;
+
+                    const clientOrderId = paypalOrderState?.clientOrderId || makeClientOrderId();
+                    const paypalOrderId = data?.orderID || paypalOrderState?.paypalOrderId;
+
+                    if (!paypalOrderId) throw new Error('PayPal Order ID is missing.');
+
+                    const result = await apiRequest('/api/paypal/capture-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            paypalOrderId,
+                            clientOrderId,
+                            ign: customer.ign,
+                            discordUser: customer.discordUser,
+                            items: getServerCart(),
+                            couponCode: appliedCouponName || null
+                        })
+                    });
+
+                    if (result?.success === false) throw new Error(result?.error || 'Server rejected PayPal payment.');
+
+                    const orderId = result?.orderId || clientOrderId;
+                    const finalTotal = Number(result?.total ?? getCartFinalTotal()).toFixed(2);
+
+                    finalizeOrderSuccess(orderId, finalTotal);
+                    paypalOrderState = null;
+                } catch (error) {
+                    showNotification(
+                        '<i class="fa-solid fa-circle-exclamation"></i>',
+                        'PayPal Payment Error',
+                        error.message || 'PayPal payment could not be completed.'
+                    );
+                }
+            },
+
+            onError: (error) => {
+                const message = error?.message || error?.details?.[0]?.description || 'PayPal could not complete the payment. Please try again.';
+                showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'PayPal Error', message);
+            },
+
+            onCancel: () => {
+                paypalOrderState = null;
+                showNotification(
+                    '<i class="fa-solid fa-circle-info"></i>',
+                    'Payment Cancelled',
+                    'The PayPal payment was cancelled. Your cart is still available.'
                 );
-
-            const imageFile =
-                proofInput?.files?.[0] ||
-                null;
-
-            if (!imageFile) {
-                resolve(null);
-                return;
             }
+        });
 
-            const maxSizeBytes =
-                8 * 1024 * 1024;
-
-            if (
-                imageFile.size >
-                maxSizeBytes
-            ) {
-                reject(
-                    new Error(
-                        'Payment proof image is too large. Please use an image smaller than 8 MB.'
-                    )
-                );
-
-                return;
+        if (typeof buttons.isEligible === 'function' && !buttons.isEligible()) {
+            if (session === paypalSession) {
+                container.innerHTML = '<p class="paypal-error">PayPal is not available for this transaction.</p>';
             }
-
-            if (
-                !imageFile.type.startsWith(
-                    'image/'
-                )
-            ) {
-                reject(
-                    new Error(
-                        'Please upload a valid image as payment proof.'
-                    )
-                );
-
-                return;
-            }
-
-            const reader =
-                new FileReader();
-
-            reader.onload = () => {
-                resolve(
-                    reader.result
-                );
-            };
-
-            reader.onerror = () => {
-                reject(
-                    new Error(
-                        'Unable to read the payment proof image.'
-                    )
-                );
-            };
-
-            reader.readAsDataURL(
-                imageFile
-            );
-        }
-    );
-}
-
-function makeClientOrderId() {
-    const timestamp =
-        Date.now()
-            .toString(36)
-            .toUpperCase();
-
-    const randomPart =
-        Math.floor(
-            1000 +
-            Math.random() *
-                9000
-        );
-
-    return `NASHMI-${timestamp}-${randomPart}`;
-}
-
-function setCheckoutBusy(
-    isBusy,
-    text =
-        'Complete Payment & Submit Order'
-) {
-    const submitBtn =
-        document.getElementById(
-            'submitBtn'
-        );
-
-    if (!submitBtn) {
-        return;
-    }
-
-    submitBtn.disabled =
-        isBusy;
-
-    submitBtn.style.opacity =
-        isBusy
-            ? '0.65'
-            : '1';
-
-    submitBtn.style.cursor =
-        isBusy
-            ? 'not-allowed'
-            : 'pointer';
-
-    submitBtn.innerHTML =
-        isBusy
-            ? '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'
-            : `${text} <i class="fa-solid fa-paper-plane"></i>`;
-}
-
-function renderPayPalButtons() {
-    const container =
-        document.getElementById(
-            'paypal-button-container'
-        );
-
-    if (!container) {
-        return;
-    }
-
-    if (paypalRendering) {
-        return;
-    }
-
-    container.innerHTML =
-        '';
-
-    if (
-        typeof paypal ===
-        'undefined'
-    ) {
-        container.innerHTML =
-            '<p style="color:var(--danger); text-align:center;">PayPal is currently unavailable. Please refresh the page.</p>';
-
-        return;
-    }
-
-    if (
-        selectedPaymentMethod !==
-        'paypal'
-    ) {
-        return;
-    }
-
-    paypalRendering = true;
-
-    try {
-        const buttons =
-            paypal.Buttons({
-                style: {
-                    layout: 'vertical',
-                    shape: 'rect',
-                    label: 'paypal',
-                    height: 45
-                },
-
-                createOrder:
-                    async () => {
-                        try {
-                            const customer =
-                                getCheckoutCustomer();
-
-                            if (!customer) {
-                                throw new Error(
-                                    'Customer information is required.'
-                                );
-                            }
-
-                            if (
-                                cart.length === 0
-                            ) {
-                                throw new Error(
-                                    'Your shopping cart is empty.'
-                                );
-                            }
-
-                            const clientOrderId =
-                                makeClientOrderId();
-
-                            const result =
-                                await apiRequest(
-                                    '/api/paypal/create-order',
-                                    {
-                                        method:
-                                            'POST',
-
-                                        headers: {
-                                            'Content-Type':
-                                                'application/json'
-                                        },
-
-                                        body:
-                                            JSON.stringify(
-                                                {
-                                                    clientOrderId,
-
-                                                    ign:
-                                                        customer.ign,
-
-                                                    discordUser:
-                                                        customer.discordUser,
-
-                                                    items:
-                                                        getServerCart(),
-
-                                                    couponCode:
-                                                        appliedCouponName ||
-                                                        null
-                                                }
-                                            )
-                                    }
-                                );
-
-                            const paypalOrderId =
-                                result?.orderID ||
-                                result?.orderId ||
-                                result?.id;
-
-                            if (!paypalOrderId) {
-                                throw new Error(
-                                    result?.error ||
-                                    'The server did not return a PayPal Order ID.'
-                                );
-                            }
-
-                            paypalOrderState = {
-                                paypalOrderId,
-                                clientOrderId
-                            };
-
-                            return paypalOrderId;
-
-                        } catch (error) {
-                            console.error(
-                                'PayPal createOrder failed:',
-                                error
-                            );
-
-                            showNotification(
-                                '<i class="fa-solid fa-circle-exclamation"></i>',
-                                'PayPal Error',
-                                error.message ||
-                                'Unable to create the PayPal order.'
-                            );
-
-                            throw error;
-                        }
-                    },
-
-                onApprove:
-                    async (
-                        data
-                    ) => {
-                        try {
-                            const customer =
-                                getCheckoutCustomer();
-
-                            if (!customer) {
-                                return;
-                            }
-
-                            const proofImage =
-                                await readPaymentProof();
-
-                            const clientOrderId =
-                                paypalOrderState
-                                    ?.clientOrderId ||
-                                makeClientOrderId();
-
-                            const paypalOrderId =
-                                data?.orderID ||
-                                paypalOrderState
-                                    ?.paypalOrderId;
-
-                            if (!paypalOrderId) {
-                                throw new Error(
-                                    'PayPal Order ID is missing.'
-                                );
-                            }
-
-                            const result =
-                                await apiRequest(
-                                    '/api/paypal/capture-order',
-                                    {
-                                        method:
-                                            'POST',
-
-                                        headers: {
-                                            'Content-Type':
-                                                'application/json'
-                                        },
-
-                                        body:
-                                            JSON.stringify(
-                                                {
-                                                    paypalOrderId,
-
-                                                    clientOrderId,
-
-                                                    ign:
-                                                        customer.ign,
-
-                                                    discordUser:
-                                                        customer.discordUser,
-
-                                                    items:
-                                                        getServerCart(),
-
-                                                    couponCode:
-                                                        appliedCouponName ||
-                                                        null,
-
-                                                    imageProof:
-                                                        proofImage
-                                                }
-                                            )
-                                    }
-                                );
-
-                            if (
-                                result?.success ===
-                                false
-                            ) {
-                                throw new Error(
-                                    result?.error ||
-                                    'The server rejected the PayPal payment.'
-                                );
-                            }
-
-                            const orderId =
-                                result?.orderId ||
-                                clientOrderId;
-
-                            const finalTotal =
-                                Number(
-                                    result?.total ??
-                                    getCartFinalTotal()
-                                ).toFixed(2);
-
-                            finalizeOrderSuccess(
-                                orderId,
-                                finalTotal
-                            );
-
-                            paypalOrderState =
-                                null;
-
-                        } catch (error) {
-                            console.error(
-                                'PayPal capture failed:',
-                                error
-                            );
-
-                            showNotification(
-                                '<i class="fa-solid fa-circle-exclamation"></i>',
-                                'PayPal Payment Error',
-                                error.message ||
-                                'The PayPal payment could not be completed.'
-                            );
-                        }
-                    },
-
-                onError:
-                    error => {
-                        console.error(
-                            'PayPal SDK Error:',
-                            error
-                        );
-
-                        const message =
-                            error?.message ||
-                            error?.details?.[0]?.description ||
-                            'PayPal could not complete the payment. Please try again.';
-
-                        showNotification(
-                            '<i class="fa-solid fa-circle-exclamation"></i>',
-                            'PayPal Error',
-                            message
-                        );
-                    },
-
-                onCancel:
-                    () => {
-                        paypalOrderState =
-                            null;
-
-                        showNotification(
-                            '<i class="fa-solid fa-circle-info"></i>',
-                            'Payment Cancelled',
-                            'The PayPal payment was cancelled. Your cart is still available.'
-                        );
-                    }
-            });
-
-        if (
-            typeof buttons.isEligible ===
-                'function' &&
-            !buttons.isEligible()
-        ) {
-            container.innerHTML =
-                '<p style="color:var(--danger); text-align:center;">PayPal is not available for this transaction or account.</p>';
-
             return;
         }
 
-        buttons
-            .render(
-                '#paypal-button-container'
-            )
-            .catch(error => {
-                console.error(
-                    'PayPal render failed:',
-                    error
-                );
-
-                container.innerHTML =
-                    '<p style="color:var(--danger); text-align:center;">Unable to load PayPal. Please refresh the page.</p>';
-            });
-
+        await buttons.render('#paypal-button-container');
     } catch (error) {
-        console.error(
-            'PayPal initialization failed:',
-            error
-        );
-
-        container.innerHTML =
-            '<p style="color:var(--danger); text-align:center;">PayPal initialization failed. Please refresh the page.</p>';
-
-    } finally {
-        setTimeout(
-            () => {
-                paypalRendering =
-                    false;
-            },
-            1000
-        );
+        if (session === paypalSession) {
+            container.innerHTML = '<p class="paypal-error">Unable to load PayPal. Please refresh.</p>';
+        }
     }
 }
 
-async function processCheckoutWebhook(
-    paymentReference =
-        'Manual/Crypto Pending'
-) {
-    // PayPal يُعالج عن طريق زر PayPal
-    if (
-        selectedPaymentMethod ===
-        'paypal'
-    ) {
+/* =========================================================
+   SUBMIT (Crypto only)
+   ========================================================= */
+function initSubmitButton() {
+    document.getElementById('submitBtn')?.addEventListener('click', () => processCheckoutWebhook('Manual/Crypto Pending'));
+}
+
+async function processCheckoutWebhook(paymentReference) {
+    if (selectedPaymentMethod === 'paypal') {
         showNotification(
             '<i class="fa-brands fa-paypal"></i>',
             'Complete PayPal Payment',
-            'Please complete the payment using the PayPal button above. Your order will be sent automatically after PayPal confirms the payment.'
+            'Please complete the payment using the PayPal button above.'
         );
-
         return;
     }
 
     if (cart.length === 0) {
-        showNotification(
-            '<i class="fa-solid fa-circle-exclamation"></i>',
-            'Empty Cart',
-            'Your shopping cart is empty.'
-        );
-
+        showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Empty Cart', 'Your shopping cart is empty.');
         return;
     }
 
-    const customer =
-        getCheckoutCustomer();
+    const customer = getCheckoutCustomer();
+    if (!customer) return;
 
-    if (!customer) {
-        return;
-    }
-
-    let imageProof =
-        null;
-
+    let imageProof = null;
     try {
-        imageProof =
-            await readPaymentProof();
-
+        imageProof = await readPaymentProof();
     } catch (error) {
-        showNotification(
-            '<i class="fa-solid fa-triangle-exclamation"></i>',
-            'Payment Proof Error',
-            error.message
-        );
-
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Payment Proof Error', error.message);
         return;
     }
 
@@ -1518,899 +645,768 @@ async function processCheckoutWebhook(
         showNotification(
             '<i class="fa-solid fa-image"></i>',
             'Payment Proof Required',
-            'Please attach your USDT payment proof image before submitting the order.'
+            'Please attach your USDT payment proof image before submitting.'
         );
-
         return;
     }
 
-    const orderId =
-        makeClientOrderId();
-
-    const finalTotal =
-        getCartFinalTotal()
-            .toFixed(2);
+    const orderId = makeClientOrderId();
+    const finalTotal = getCartFinalTotal().toFixed(2);
 
     const orderData = {
         orderId,
-
-        ign:
-            customer.ign,
-
-        discordUser:
-            customer.discordUser,
-
-        paymentMethod:
-            'CRYPTO',
-
+        ign: customer.ign,
+        discordUser: customer.discordUser,
+        paymentMethod: 'CRYPTO',
         paymentReference,
-
-        total:
-            finalTotal,
-
-        items:
-            getServerCart(),
-
-        date:
-            new Date()
-                .toLocaleDateString(),
-
-        status:
-            'Pending',
-
+        items: getServerCart(),
         imageProof
     };
 
     try {
-        setCheckoutBusy(
-            true,
-            'Submitting Crypto Order'
-        );
+        setCheckoutBusy(true, 'Submitting Crypto Order');
 
-        const result =
-            await apiRequest(
-                '/api/new-order',
-                {
-                    method:
-                        'POST',
+        const result = await apiRequest('/api/new-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
 
-                    headers: {
-                        'Content-Type':
-                            'application/json'
-                    },
-
-                    body:
-                        JSON.stringify(
-                            orderData
-                        )
-                }
-            );
-
-        if (
-            !result ||
-            result.success !== true
-        ) {
-            throw new Error(
-                result?.error ||
-                'The server rejected the crypto order.'
-            );
+        if (!result || result.success !== true) {
+            throw new Error(result?.error || 'Server rejected the crypto order.');
         }
 
-        const serverOrderId =
-            result.orderId ||
-            orderId;
+        const serverOrderId = result.orderId || orderId;
+        const serverTotal = Number(result.total ?? finalTotal).toFixed(2);
 
-        const serverTotal =
-            Number(
-                result.total ??
-                finalTotal
-            ).toFixed(2);
-
-        finalizeOrderSuccess(
-            serverOrderId,
-            serverTotal
-        );
-
+        finalizeOrderSuccess(serverOrderId, serverTotal);
     } catch (error) {
-        console.error(
-            'Crypto order submission failed:',
-            error
-        );
-
         showNotification(
             '<i class="fa-solid fa-circle-exclamation"></i>',
             'USDT Order Failed',
-            error.message ||
-            'The USDT order could not be sent to the store server.'
+            error.message || 'The USDT order could not be sent to the store server.'
         );
-
     } finally {
-        setCheckoutBusy(
-            false,
-            'Complete Payment & Submit Order'
-        );
+        setCheckoutBusy(false, 'Complete Payment & Submit Order');
     }
 }
 
-async function sendOrderWithImage(
-    orderId,
-    ign,
-    discordUser,
-    finalTotal,
-    imageProof
-) {
-    const orderData = {
-        orderId,
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function getCheckoutCustomer() {
+    const ignInput = document.getElementById('checkoutIgnInput');
+    const discordInput = document.getElementById('checkoutDiscordInput');
+    const ign = (ignInput?.value || '').trim();
+    const discordUser = (discordInput?.value || '').trim();
 
-        ign,
+    if (!ign) {
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Minecraft Name Required', 'Please enter your Minecraft IGN.');
+        ignInput?.focus();
+        return null;
+    }
 
-        discordUser,
+    if (!/^[A-Za-z0-9_]{1,16}$/.test(ign)) {
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Invalid IGN', 'IGN must be 1-16 chars (letters, numbers, underscore only).');
+        ignInput?.focus();
+        return null;
+    }
 
-        paymentMethod:
-            selectedPaymentMethod
-                .toUpperCase(),
+    if (!discordUser) {
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Discord Username Required', 'Please enter your Discord username.');
+        discordInput?.focus();
+        return null;
+    }
 
-        total:
-            finalTotal,
+    if (!/^[a-zA-Z0-9._]{2,32}(#\d{4})?$/.test(discordUser)) {
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Invalid Discord Username', 'Use 2-32 chars (letters, numbers, dot, underscore).');
+        discordInput?.focus();
+        return null;
+    }
 
-        items:
-            getServerCart(),
+    return { ign, discordUser };
+}
 
-        date:
-            new Date()
-                .toLocaleDateString(),
+function getCartFinalTotal() {
+    const subtotal = cart.reduce((sum, item) => {
+        const price = Number(item.price);
+        return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+    return Number((subtotal * (1 - discountPercent / 100)).toFixed(2));
+}
 
-        status:
-            'Pending',
+function getServerCart() {
+    return cart.map(item => ({
+        title: String(item.title || '').trim(),
+        price: Number(Number(item.price || 0).toFixed(2)),
+        ...(item.details ? { details: String(item.details) } : {})
+    }));
+}
 
-        imageProof
-    };
+function readPaymentProof() {
+    return new Promise((resolve, reject) => {
+        const proofInput = document.getElementById('checkoutProofImage');
+        const imageFile = proofInput?.files?.[0] || null;
 
-    try {
-        const result =
-            await apiRequest(
-                '/api/new-order',
-                {
-                    method:
-                        'POST',
-
-                    headers: {
-                        'Content-Type':
-                            'application/json'
-                    },
-
-                    body:
-                        JSON.stringify(
-                            orderData
-                        )
-                }
-            );
-
-        if (
-            !result ||
-            result.success !== true
-        ) {
-            throw new Error(
-                result?.error ||
-                'The server rejected the order.'
-            );
+        if (!imageFile) {
+            resolve(null);
+            return;
         }
 
-        finalizeOrderSuccess(
-            result.orderId ||
-                orderId,
+        const maxSizeBytes = MAX_PROOF_MB * 1024 * 1024;
+        if (imageFile.size > maxSizeBytes) {
+            reject(new Error(`Image too large. Max ${MAX_PROOF_MB} MB.`));
+            return;
+        }
 
-            Number(
-                result.total ??
-                finalTotal
-            ).toFixed(2)
-        );
+        if (!/^image\/(png|jpeg|jpg|webp)$/i.test(imageFile.type)) {
+            reject(new Error('Please upload a PNG, JPG, or WEBP image.'));
+            return;
+        }
 
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Unable to read the image.'));
+        reader.readAsDataURL(imageFile);
+    });
+}
+
+function makeClientOrderId() {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const randomPart = Math.floor(1000 + Math.random() * 9000);
+    return `NASHMI-${timestamp}-${randomPart}`;
+}
+
+function setCheckoutBusy(isBusy, text = 'Complete Payment & Submit Order') {
+    const submitBtn = document.getElementById('submitBtn');
+    if (!submitBtn) return;
+    submitBtn.disabled = isBusy;
+    submitBtn.innerHTML = isBusy
+        ? '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'
+        : `${text} <i class="fa-solid fa-paper-plane"></i>`;
+}
+
+/* =========================================================
+   API
+   ========================================================= */
+async function apiRequest(path, options = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+        const response = await fetch(`${API_URL}${path}`, {
+            ...options,
+            headers: {
+                Accept: 'application/json',
+                ...(options.headers || {})
+            },
+            mode: 'cors',
+            signal: controller.signal
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            data = text ? { message: text } : {};
+        }
+
+        if (!response.ok) {
+            throw new Error(data?.error || data?.message || `Server returned HTTP ${response.status}`);
+        }
+
+        return data;
     } catch (error) {
-        console.error(
-            'Order submission failed:',
-            error
-        );
-
-        showNotification(
-            '<i class="fa-solid fa-circle-exclamation"></i>',
-            'Order Submission Failed',
-            error.message ||
-            'The order could not be sent to the store server.'
-        );
+        if (error?.name === 'AbortError') {
+            throw new Error('The store server took too long to respond. Please try again.');
+        }
+        if (error instanceof TypeError) {
+            throw new Error('Could not connect to the store server. Check your connection.');
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
 
-function finalizeOrderSuccess(
-    orderId,
-    finalTotal
-) {
+/* =========================================================
+   ORDER SUCCESS
+   ========================================================= */
+function finalizeOrderSuccess(orderId, finalTotal) {
     saveOrderToHistory({
-        id:
-            orderId,
-
-        date:
-            new Date()
-                .toLocaleDateString(),
-
-        total:
-            finalTotal,
-
-        status:
-            'Pending',
-
-        items:
-            [...cart]
+        id: orderId,
+        date: new Date().toLocaleDateString(),
+        total: finalTotal,
+        status: 'Pending',
+        items: [...cart]
     });
 
     closeCheckoutModal();
-    clearCart();
+    resetCart();
 
     showOrderSuccessNotification(
         orderId,
-
-        'Your order details have been successfully sent to Discord.<br>Execution and response time inside the server is within <strong>3 to 4 hours maximum</strong>.'
+        'Your order has been sent to Discord.<br>Execution time inside the server is within <strong>3 to 4 hours maximum</strong>.'
     );
 
-    switchSection(
-        'tracking-section'
-    );
+    switchSection('tracking-section');
 }
 
-async function syncOrdersFromServer() {
-    const history =
-        JSON.parse(
-            localStorage.getItem(
-                'nashmi_orders'
-            ) || '[]'
-        );
+function resetCart() {
+    cart = [];
+    discountPercent = 0;
+    appliedCouponName = '';
 
-    if (
-        history.length === 0
-    ) {
-        return;
-    }
+    const couponInput = document.getElementById('couponCodeInput');
+    const msg = document.getElementById('couponMsg');
+    const fileInput = document.getElementById('checkoutProofImage');
+    if (couponInput) couponInput.value = '';
+    if (msg) msg.textContent = '';
+    if (fileInput) fileInput.value = '';
 
-    let updated =
-        false;
-
-    await Promise.all(
-        history.map(
-            async localOrd => {
-                try {
-                    const srvOrd =
-                        await apiRequest(
-                            `/api/orders/${encodeURIComponent(localOrd.id)}`
-                        );
-
-                    if (
-                        srvOrd &&
-                        srvOrd.status &&
-                        srvOrd.status !==
-                            localOrd.status
-                    ) {
-                        localOrd.status =
-                            srvOrd.status;
-
-                        updated =
-                            true;
-                    }
-                } catch {
-                    // تجاهل خطأ طلب واحد وعدم إيقاف مزامنة بقية الطلبات
-                }
-            }
-        )
-    );
-
-    if (updated) {
-        localStorage.setItem(
-            'nashmi_orders',
-            JSON.stringify(
-                history
-            )
-        );
-
-        renderUserOrders();
-    }
+    updateCartUI();
 }
 
-function showOrderSuccessNotification(
-    orderId,
-    message
-) {
-    const icon =
-        document.getElementById(
-            'notifIcon'
-        );
+function showOrderSuccessNotification(orderId, message) {
+    const icon = document.getElementById('notifIcon');
+    const titleEl = document.getElementById('notifTitle');
+    const msg = document.getElementById('notifMsg');
+    const modal = document.getElementById('notificationModal');
+    const actions = document.getElementById('notifActions');
 
-    const titleEl =
-        document.getElementById(
-            'notifTitle'
-        );
-
-    const msg =
-        document.getElementById(
-            'notifMsg'
-        );
-
-    const modal =
-        document.getElementById(
-            'notificationModal'
-        );
-
-    const actionsContainer =
-        document.getElementById(
-            'notifActions'
-        );
-
-    if (icon) {
-        icon.innerHTML =
-            '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>';
-    }
-
-    if (titleEl) {
-        titleEl.innerHTML =
-            'Order Submitted Successfully!';
-    }
+    if (icon) icon.innerHTML = '<i class="fa-solid fa-circle-check success-icon"></i>';
+    if (titleEl) titleEl.textContent = 'Order Submitted Successfully!';
 
     if (msg) {
-        msg.innerHTML =
-            `Your Order ID: <strong style="color:var(--accent); font-size:1.2rem;">${escapeHtml(orderId)}</strong><br><br>${message}`;
+        msg.innerHTML = '';
+        const strong = document.createElement('strong');
+        strong.className = 'order-id-display';
+        strong.textContent = orderId;
+        msg.appendChild(document.createTextNode('Your Order ID: '));
+        msg.appendChild(strong);
+        msg.appendChild(document.createElement('br'));
+        msg.appendChild(document.createElement('br'));
+        msg.insertAdjacentHTML('beforeend', message);
     }
 
-    if (actionsContainer) {
-        actionsContainer.innerHTML = `
-            <button
-                onclick="copyOrderId('${escapeJsString(orderId)}')"
-                style="
-                    background: var(--accent);
-                    border: none;
-                    padding: 10px 18px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    color: var(--bg-dark);
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                "
-            >
-                <i class="fa-solid fa-copy"></i>
-                Copy Order ID
-            </button>
+    if (actions) {
+        actions.innerHTML = '';
 
-            <button
-                class="btn-modal-ok"
-                onclick="closeNotificationModal()"
-                style="
-                    padding: 10px 18px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    cursor: pointer;
-                "
-            >
-                OK
-            </button>
-        `;
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'btn-modal-ok';
+        copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Order ID';
+        copyBtn.addEventListener('click', () => copyOrderId(orderId));
+
+        const okBtn = document.createElement('button');
+        okBtn.type = 'button';
+        okBtn.className = 'btn-modal-ok';
+        okBtn.textContent = 'OK';
+        okBtn.addEventListener('click', closeNotificationModal);
+
+        actions.appendChild(copyBtn);
+        actions.appendChild(okBtn);
     }
 
-    if (modal) {
-        modal.style.display =
-            'flex';
-    }
+    if (modal) modal.classList.add('open');
 }
 
 function copyOrderId(orderId) {
-    navigator.clipboard.writeText(
-        orderId
-    );
-
-    showNotification(
-        '<i class="fa-solid fa-copy"></i>',
-        'Copied',
-        'Order ID copied to clipboard successfully!'
-    );
+    navigator.clipboard.writeText(orderId).then(() => {
+        showNotification('<i class="fa-solid fa-copy"></i>', 'Copied', 'Order ID copied to clipboard!');
+    });
 }
 
+/* =========================================================
+   ORDER HISTORY
+   ========================================================= */
 function saveOrderToHistory(order) {
-    let history =
-        JSON.parse(
-            localStorage.getItem(
-                'nashmi_orders'
-            ) || '[]'
-        );
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch { history = []; }
 
     history.unshift(order);
+    history = history.slice(0, MAX_HISTORY);
 
-    // الاحتفاظ بآخر 50 طلبًا على هذا الجهاز
-    history =
-        history.slice(0, 50);
-
-    localStorage.setItem(
-        'nashmi_orders',
-        JSON.stringify(
-            history
-        )
-    );
-
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     renderUserOrders();
 }
 
 function renderUserOrders() {
-    const container =
-        document.getElementById(
-            'userOrdersContainer'
-        );
+    const container = document.getElementById('userOrdersContainer');
+    if (!container) return;
 
-    if (!container) {
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch { history = []; }
+
+    container.innerHTML = '';
+
+    if (history.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'no-orders-msg';
+        p.textContent = 'No active orders found on this device.';
+        container.appendChild(p);
         return;
     }
 
-    let history =
-        JSON.parse(
-            localStorage.getItem(
-                'nashmi_orders'
-            ) || '[]'
-        );
+    history.forEach(ord => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'order-history-item';
 
-    container.innerHTML =
-        '';
+        const left = document.createElement('div');
 
-    if (
-        history.length === 0
-    ) {
-        container.innerHTML =
-            '<p style="color:var(--text-muted); font-size:0.9rem;">No active orders found on this device.</p>';
+        const idEl = document.createElement('strong');
+        idEl.className = 'order-history-id';
+        idEl.textContent = ord.id;
 
-        return;
-    }
+        const meta = document.createElement('div');
+        meta.className = 'order-history-meta';
+        meta.textContent = `Date: ${ord.date || 'N/A'} | Total: $${ord.total ?? '0.00'}`;
 
-    history.forEach(
-        ord => {
-            const itemEl =
-                document.createElement(
-                    'div'
-                );
+        left.appendChild(idEl);
+        left.appendChild(meta);
 
-            itemEl.style.cssText =
-                'background:var(--bg-dark); border:1px solid var(--border); padding:15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;';
+        const badge = document.createElement('span');
+        let statusClass = 'status-pending';
+        let statusIcon = 'fa-clock';
+        let statusText = 'Pending';
 
-            let statusBadgeClass =
-                'status-pending';
-
-            let statusIcon =
-                'fa-clock';
-
-            let statusText =
-                'Pending';
-
-            if (
-                ord.status === 'Approved' ||
-                ord.status === 'مقبول'
-            ) {
-                statusBadgeClass =
-                    'status-success';
-
-                statusIcon =
-                    'fa-check';
-
-                statusText =
-                    'Approved';
-            } else if (
-                ord.status === 'Rejected' ||
-                ord.status === 'مرفوض'
-            ) {
-                statusBadgeClass =
-                    'status-danger';
-
-                statusIcon =
-                    'fa-xmark';
-
-                statusText =
-                    'Rejected';
-            }
-
-            itemEl.innerHTML = `
-                <div>
-                    <strong
-                        style="
-                            color:var(--accent);
-                            font-size:1rem;
-                        "
-                    >
-                        ${escapeHtml(
-                            ord.id
-                        )}
-                    </strong>
-
-                    <div
-                        style="
-                            font-size:0.8rem;
-                            color:var(--text-muted);
-                            margin-top:4px;
-                        "
-                    >
-                        Date:
-                        ${escapeHtml(
-                            ord.date || 'N/A'
-                        )}
-                        |
-                        Total:
-                        $${escapeHtml(
-                            String(
-                                ord.total ??
-                                '0.00'
-                            )
-                        )}
-                    </div>
-                </div>
-
-                <span
-                    class="status-badge ${statusBadgeClass}"
-                >
-                    <i class="fa-solid ${statusIcon}"></i>
-                    ${statusText}
-                </span>
-            `;
-
-            container.appendChild(
-                itemEl
-            );
+        if (ord.status === 'Approved' || ord.status === 'مقبول') {
+            statusClass = 'status-success';
+            statusIcon = 'fa-check';
+            statusText = 'Approved';
+        } else if (ord.status === 'Rejected' || ord.status === 'مرفوض') {
+            statusClass = 'status-danger';
+            statusIcon = 'fa-xmark';
+            statusText = 'Rejected';
         }
-    );
+
+        badge.className = `status-badge ${statusClass}`;
+        badge.innerHTML = `<i class="fa-solid ${statusIcon}"></i> ${statusText}`;
+
+        itemEl.appendChild(left);
+        itemEl.appendChild(badge);
+        container.appendChild(itemEl);
+    });
+}
+
+async function syncOrdersFromServer() {
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch { return; }
+
+    if (history.length === 0) return;
+
+    let updated = false;
+
+    await Promise.all(history.map(async localOrd => {
+        try {
+            const srvOrd = await apiRequest(`/api/orders/${encodeURIComponent(localOrd.id)}`);
+            if (srvOrd && srvOrd.status && srvOrd.status !== localOrd.status) {
+                localOrd.status = srvOrd.status;
+                updated = true;
+            }
+        } catch {
+            // ignore
+        }
+    }));
+
+    if (updated) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        renderUserOrders();
+    }
+}
+
+/* =========================================================
+   TRACKING
+   ========================================================= */
+function initTrackingActions() {
+    document.getElementById('trackBtn')?.addEventListener('click', trackOrder);
+    const input = document.getElementById('trackingInput');
+    if (input) {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') trackOrder();
+        });
+    }
 }
 
 async function trackOrder() {
-    const input =
-        document.getElementById(
-            'trackingInput'
-        )?.value.trim();
+    const input = document.getElementById('trackingInput');
+    const resultBox = document.getElementById('trackingResultBox');
+    const resultText = document.getElementById('trackingResultText');
+    const value = (input?.value || '').trim();
 
-    const resultBox =
-        document.getElementById(
-            'trackingResultBox'
-        );
-
-    const resultText =
-        document.getElementById(
-            'trackingResultText'
-        );
-
-    if (!input) {
-        showNotification(
-            '<i class="fa-solid fa-triangle-exclamation"></i>',
-            'Track Order',
-            'Please enter a valid Order ID.'
-        );
-
+    if (!value) {
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Track Order', 'Please enter a valid Order ID.');
         return;
     }
 
-    if (resultBox) {
-        resultBox.style.display =
-            'block';
-    }
-
-    if (resultText) {
-        resultText.innerHTML =
-            '<i class="fa-solid fa-spinner fa-spin"></i> Checking order status...';
-    }
+    if (resultBox) resultBox.style.display = 'block';
+    if (resultText) resultText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
 
     try {
-        const found =
-            await apiRequest(
-                `/api/orders/${encodeURIComponent(
-                    input
-                )}`
-            );
+        const found = await apiRequest(`/api/orders/${encodeURIComponent(value)}`);
+        if (!found || !found.id) throw new Error('Order not found.');
 
-        if (
-            !found ||
-            !found.id
-        ) {
-            throw new Error(
-                'Order not found.'
-            );
-        }
-
-        const items =
-            Array.isArray(
-                found.items
-            )
-                ? found.items
-                : [];
-
-        const itemsStr =
-            items.length
-                ? items
-                      .map(
-                          i =>
-                              `• ${escapeHtml(
-                                  i.title ||
-                                      ''
-                              )} ($${Number(
-                                  i.price || 0
-                              ).toFixed(2)})`
-                      )
-                      .join(
-                          '<br>'
-                      )
-                : 'No item details available.';
+        const items = Array.isArray(found.items) ? found.items : [];
 
         if (resultText) {
-            resultText.innerHTML = `
-                <strong>Order ID:</strong>
-                ${escapeHtml(
-                    found.id
-                )}
-                <br>
+            resultText.innerHTML = '';
 
-                <strong>Date:</strong>
-                ${escapeHtml(
-                    found.date ||
-                        'N/A'
-                )}
-                <br>
+            const appendLine = (label, val) => {
+                const strong = document.createElement('strong');
+                strong.textContent = label + ': ';
+                resultText.appendChild(strong);
+                resultText.appendChild(document.createTextNode(String(val)));
+                resultText.appendChild(document.createElement('br'));
+            };
 
-                <strong>Total:</strong>
-                $${Number(
-                    found.total || 0
-                ).toFixed(2)}
-                <br>
+            appendLine('Order ID', found.id);
+            appendLine('Date', found.date || 'N/A');
+            appendLine('Total', '$' + Number(found.total || 0).toFixed(2));
 
-                <strong>Status:</strong>
-                <span class="status-badge">
-                    <i class="fa-solid fa-info-circle"></i>
-                    ${escapeHtml(
-                        found.status ||
-                            'Pending'
-                    )}
-                </span>
+            const stStrong = document.createElement('strong');
+            stStrong.textContent = 'Status: ';
+            resultText.appendChild(stStrong);
 
-                <br><br>
+            const badge = document.createElement('span');
+            badge.className = 'status-badge';
+            badge.innerHTML = `<i class="fa-solid fa-info-circle"></i> ${escapeHtml(found.status || 'Pending')}`;
+            resultText.appendChild(badge);
+            resultText.appendChild(document.createElement('br'));
+            resultText.appendChild(document.createElement('br'));
 
-                <strong>Items Included:</strong>
-                <br>
-                ${itemsStr}
-            `;
+            const itemsStrong = document.createElement('strong');
+            itemsStrong.textContent = 'Items Included:';
+            resultText.appendChild(itemsStrong);
+            resultText.appendChild(document.createElement('br'));
+
+            if (items.length === 0) {
+                resultText.appendChild(document.createTextNode('No item details.'));
+            } else {
+                items.forEach(item => {
+                    const line = document.createElement('div');
+                    line.textContent = `• ${item.title || ''} ($${Number(item.price || 0).toFixed(2)})`;
+                    resultText.appendChild(line);
+                });
+            }
         }
 
-        let history =
-            JSON.parse(
-                localStorage.getItem(
-                    'nashmi_orders'
-                ) || '[]'
-            );
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { history = []; }
 
-        const existingIndex =
-            history.findIndex(
-                o =>
-                    String(
-                        o.id
-                    ).toUpperCase() ===
-                    String(
-                        found.id
-                    ).toUpperCase()
-            );
+        const existingIndex = history.findIndex(o => String(o.id).toUpperCase() === String(found.id).toUpperCase());
 
-        const compactOrder = {
-            id:
-                found.id,
-
-            date:
-                found.date ||
-                new Date()
-                    .toLocaleDateString(),
-
-            total:
-                Number(
-                    found.total ||
-                        0
-                ).toFixed(2),
-
-            status:
-                found.status ||
-                'Pending',
-
+        const compact = {
+            id: found.id,
+            date: found.date || new Date().toLocaleDateString(),
+            total: Number(found.total || 0).toFixed(2),
+            status: found.status || 'Pending',
             items
         };
 
-        if (
-            existingIndex >=
-            0
-        ) {
-            history[
-                existingIndex
-            ] =
-                compactOrder;
-        } else {
-            history.unshift(
-                compactOrder
-            );
-        }
+        if (existingIndex >= 0) history[existingIndex] = compact;
+        else history.unshift(compact);
 
-        history =
-            history.slice(
-                0,
-                50
-            );
-
-        localStorage.setItem(
-            'nashmi_orders',
-            JSON.stringify(
-                history
-            )
-        );
-
+        history = history.slice(0, MAX_HISTORY);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
         renderUserOrders();
-
     } catch (error) {
         if (resultText) {
-            resultText.innerHTML =
-                `<strong>Order ID:</strong> ${escapeHtml(
-                    input
-                )}<br><strong>Status:</strong> Not Found`;
+            resultText.innerHTML = '';
+            const strong = document.createElement('strong');
+            strong.textContent = 'Order ID: ';
+            resultText.appendChild(strong);
+            resultText.appendChild(document.createTextNode(value));
+            resultText.appendChild(document.createElement('br'));
+            const st = document.createElement('strong');
+            st.textContent = 'Status: ';
+            resultText.appendChild(st);
+            resultText.appendChild(document.createTextNode('Not Found'));
         }
     }
 }
 
-function copyHomeServerIp() {
-    navigator.clipboard.writeText(
-        'play.nashmimc.net'
-    );
-
-    showNotification(
-        '<i class="fa-solid fa-copy"></i>',
-        'IP Copied',
-        'Server IP copied to clipboard!'
-    );
+/* =========================================================
+   COPY BUTTONS
+   ========================================================= */
+function initCopyButtons() {
+    document.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const value = btn.dataset.copy || '';
+            const label = btn.dataset.copyLabel || 'Value';
+            navigator.clipboard.writeText(value).then(() => {
+                showNotification(
+                    '<i class="fa-solid fa-copy"></i>',
+                    label + ' Copied',
+                    label + ' copied to clipboard!'
+                );
+            });
+        });
+    });
 }
 
-function copyServerIp() {
-    copyHomeServerIp();
+/* =========================================================
+   NOTIFICATION MODAL
+   ========================================================= */
+function showNotification(iconHtml, title, message) {
+    const icon = document.getElementById('notifIcon');
+    const titleEl = document.getElementById('notifTitle');
+    const msg = document.getElementById('notifMsg');
+    const modal = document.getElementById('notificationModal');
+    const actions = document.getElementById('notifActions');
+
+    if (icon) icon.innerHTML = iconHtml;
+    if (titleEl) titleEl.textContent = title;
+    if (msg) msg.textContent = message;
+
+    if (actions) {
+        actions.innerHTML = '';
+        const okBtn = document.createElement('button');
+        okBtn.type = 'button';
+        okBtn.className = 'btn-modal-ok';
+        okBtn.textContent = 'OK';
+        okBtn.addEventListener('click', closeNotificationModal);
+        actions.appendChild(okBtn);
+    }
+
+    if (modal) modal.classList.add('open');
 }
 
-function copyWallet() {
-    const addr =
-        document.getElementById(
-            'walletAddr'
-        )?.innerText || '';
+function showConfirmNotification(iconHtml, title, message, onConfirm) {
+    const icon = document.getElementById('notifIcon');
+    const titleEl = document.getElementById('notifTitle');
+    const msg = document.getElementById('notifMsg');
+    const modal = document.getElementById('notificationModal');
+    const actions = document.getElementById('notifActions');
 
-    navigator.clipboard.writeText(
-        addr
-    );
+    if (icon) icon.innerHTML = iconHtml;
+    if (titleEl) titleEl.textContent = title;
+    if (msg) msg.textContent = message;
 
-    showNotification(
-        '<i class="fa-solid fa-copy"></i>',
-        'Wallet Copied',
-        'Binance TRC20 Wallet Address copied!'
-    );
-}
+    if (actions) {
+        actions.innerHTML = '';
 
-function showNotification(
-    iconHtml,
-    title,
-    message
-) {
-    const icon =
-        document.getElementById(
-            'notifIcon'
-        );
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn-clear-cart';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', closeNotificationModal);
 
-    const titleEl =
-        document.getElementById(
-            'notifTitle'
-        );
+        const okBtn = document.createElement('button');
+        okBtn.type = 'button';
+        okBtn.className = 'btn-modal-ok';
+        okBtn.textContent = 'Confirm';
+        okBtn.addEventListener('click', () => {
+            closeNotificationModal();
+            onConfirm();
+        });
 
-    const msg =
-        document.getElementById(
-            'notifMsg'
-        );
-
-    const modal =
-        document.getElementById(
-            'notificationModal'
-        );
-
-    const actionsContainer =
-        document.getElementById(
-            'notifActions'
-        );
-
-    if (icon) {
-        icon.innerHTML =
-            iconHtml;
+        actions.appendChild(cancelBtn);
+        actions.appendChild(okBtn);
     }
 
-    if (titleEl) {
-        titleEl.innerHTML =
-            title;
-    }
-
-    if (msg) {
-        msg.innerHTML =
-            message;
-    }
-
-    if (actionsContainer) {
-        actionsContainer.innerHTML = `
-            <button
-                class="btn-modal-ok"
-                onclick="closeNotificationModal()"
-                style="
-                    padding: 10px 22px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    cursor: pointer;
-                "
-            >
-                OK
-            </button>
-        `;
-    }
-
-    if (modal) {
-        modal.style.display =
-            'flex';
-    }
+    if (modal) modal.classList.add('open');
 }
 
 function closeNotificationModal() {
-    const modal =
-        document.getElementById(
-            'notificationModal'
-        );
+    const modal = document.getElementById('notificationModal');
+    if (modal) modal.classList.remove('open');
+}
 
-    if (modal) {
-        modal.style.display =
-            'none';
+/* =========================================================
+   ESCAPE + OVERLAY CLICK
+   ========================================================= */
+function initEscapeAndOverlay() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+
+        closeNotificationModal();
+        closeCheckoutModal();
+
+        document.getElementById('cartDrawer')?.classList.remove('active');
+        document.getElementById('sideDrawer')?.classList.remove('active');
+        closeAllDropdowns();
+    });
+
+    ['checkoutModal', 'notificationModal'].forEach(id => {
+        const overlay = document.getElementById(id);
+        if (!overlay) return;
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.classList.remove('open');
+            }
+        });
+    });
+}
+
+/* =========================================================
+   CUSTOM RANK BUILDER
+   ========================================================= */
+function initCustomBuilder() {
+    const ids = ['customName', 'customPv', 'customHomes', 'customEc', 'chkAnvil', 'chkTags', 'chkSafeRoom', 'chkColor', 'primaryRankColor', 'secondaryRankColor'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => { updateCustomPreview(); calcCustomPrice(); });
+            el.addEventListener('change', () => { updateCustomPreview(); calcCustomPrice(); });
+        }
+    });
+
+    document.querySelectorAll('input[name="colorType"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const isGradient = radio.value === 'gradient' && radio.checked;
+            const secGroup = document.getElementById('secondaryColorGroup');
+            if (secGroup) secGroup.style.display = isGradient ? 'block' : 'none';
+            updateCustomPreview();
+        });
+    });
+
+    const chkColor = document.getElementById('chkColor');
+    if (chkColor) {
+        chkColor.addEventListener('change', () => {
+            const container = document.getElementById('colorOptionsContainer');
+            if (container) container.style.display = chkColor.checked ? 'block' : 'none';
+        });
+    }
+
+    document.getElementById('customAddBtn')?.addEventListener('click', () => addCustomToCart(false));
+    document.getElementById('customBuyBtn')?.addEventListener('click', () => addCustomToCart(true));
+
+    updateCustomPreview();
+    calcCustomPrice();
+}
+
+function updateCustomPreview() {
+    const nameInput = document.getElementById('customName');
+    const previewEl = document.getElementById('liveRankPreview');
+    const colorHex = document.getElementById('colorHexCodeDisplay');
+    const chkColor = document.getElementById('chkColor');
+
+    if (!previewEl) return;
+
+    const name = ((nameInput?.value || '').trim().toUpperCase() || 'KING').replace(/[^A-Z0-9_]/g, '').substring(0, 16);
+
+    if (!chkColor?.checked) {
+        previewEl.style.background = 'none';
+        previewEl.style.color = '#fbbf24';
+        previewEl.style.webkitBackgroundClip = 'initial';
+        previewEl.style.webkitTextFillColor = 'initial';
+        previewEl.textContent = `[${name}]`;
+        if (colorHex) colorHex.textContent = 'Color Styling: Default (#fbbf24)';
+        return;
+    }
+
+    const isGradient = document.querySelector('input[name="colorType"]:checked')?.value === 'gradient';
+    const pColor = document.getElementById('primaryRankColor')?.value || '#ffffff';
+    const sColor = document.getElementById('secondaryRankColor')?.value || '#ffffff';
+
+    if (isGradient) {
+        previewEl.style.background = `linear-gradient(90deg, ${pColor}, ${sColor})`;
+        previewEl.style.webkitBackgroundClip = 'text';
+        previewEl.style.webkitTextFillColor = 'transparent';
+        previewEl.textContent = `[${name}]`;
+        if (colorHex) colorHex.textContent = `Gradient HEX: ${pColor} > ${sColor}`;
+    } else {
+        previewEl.style.background = 'none';
+        previewEl.style.color = pColor;
+        previewEl.style.webkitBackgroundClip = 'initial';
+        previewEl.style.webkitTextFillColor = 'initial';
+        previewEl.textContent = `[${name}]`;
+        if (colorHex) colorHex.textContent = `Solid HEX Code: ${pColor}`;
     }
 }
 
-function escapeHtml(value) {
-    return String(
-        value ?? ''
-    )
-        .replaceAll(
-            '&',
-            '&amp;'
-        )
-        .replaceAll(
-            '<',
-            '&lt;'
-        )
-        .replaceAll(
-            '>',
-            '&gt;'
-        )
-        .replaceAll(
-            '"',
-            '&quot;'
-        )
-        .replaceAll(
-            "'",
-            '&#039;'
-        );
+function calcCustomPrice() {
+    let price = 5.00;
+
+    const pv = Math.min(10, Math.max(0, parseInt(document.getElementById('customPv')?.value) || 0));
+    const homes = Math.min(7, Math.max(2, parseInt(document.getElementById('customHomes')?.value) || 2));
+    const ecPrice = parseFloat(document.getElementById('customEc')?.value) || 0;
+
+    price += pv * 3.00;
+    if (homes > 2) price += (homes - 2) * 1.50;
+    price += ecPrice;
+
+    if (document.getElementById('chkAnvil')?.checked) price += 3.00;
+    if (document.getElementById('chkTags')?.checked) price += 4.00;
+    if (document.getElementById('chkSafeRoom')?.checked) price += 5.00;
+    if (document.getElementById('chkColor')?.checked) price += 3.00;
+
+    const display = document.getElementById('customPriceDisplay');
+    if (display) display.textContent = `$${price.toFixed(2)}`;
+
+    return Number(price.toFixed(2));
 }
 
-function escapeJsString(value) {
-    return String(
-        value ?? ''
-    )
-        .replaceAll(
-            '\\',
-            '\\\\'
-        )
-        .replaceAll(
-            "'",
-            "\\'"
-        )
-        .replaceAll(
-            '\n',
-            '\\n'
-        )
-        .replaceAll(
-            '\r',
-            '\\r'
-        );
+function getCustomRankDetails() {
+    const nameInput = document.getElementById('customName');
+    const rawName = ((nameInput?.value || '').trim().toUpperCase() || 'KING').replace(/[^A-Z0-9_]/g, '').substring(0, 16);
+
+    const pv = Math.min(10, Math.max(0, parseInt(document.getElementById('customPv')?.value) || 0));
+    const homes = Math.min(7, Math.max(2, parseInt(document.getElementById('customHomes')?.value) || 2));
+
+    const ecSelect = document.getElementById('customEc');
+    const ecText = ecSelect ? ecSelect.options[ecSelect.selectedIndex].text : 'None';
+
+    const anvil = document.getElementById('chkAnvil')?.checked ? 'Yes' : 'No';
+    const tags = document.getElementById('chkTags')?.checked ? 'Yes' : 'No';
+    const safeRoom = document.getElementById('chkSafeRoom')?.checked ? 'Yes' : 'No';
+    const hasColor = document.getElementById('chkColor')?.checked;
+
+    let colorInfo = 'Default Accent Color';
+
+    if (hasColor) {
+        const isGradient = document.querySelector('input[name="colorType"]:checked')?.value === 'gradient';
+        const pColor = document.getElementById('primaryRankColor')?.value || '#ffffff';
+        const sColor = document.getElementById('secondaryRankColor')?.value || '#ffffff';
+
+        if (isGradient) colorInfo = `Gradient (${pColor} to ${sColor})`;
+        else colorInfo = `Solid (${pColor})`;
+    }
+
+    return {
+        name: rawName,
+        details: `Rank Name: [${rawName}] | Color: ${colorInfo} | PVs: ${pv} | Homes: ${homes} | EC: ${ecText} | Anvil: ${anvil} | Tags: ${tags} | SafeRoom: ${safeRoom}`
+    };
+}
+
+function addCustomToCart(goToCheckout) {
+    const rankObj = getCustomRankDetails();
+    const price = calcCustomPrice();
+
+    if (!rankObj.name || rankObj.name.length < 1) {
+        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Rank Name Required', 'Please enter a custom rank name.');
+        return;
+    }
+
+    cart.push({
+        title: `Custom Rank: [${rankObj.name}]`,
+        price,
+        details: rankObj.details
+    });
+
+    updateCartUI();
+
+    if (goToCheckout) openCheckoutModal();
+    else showNotification('<i class="fa-solid fa-cart-plus"></i>', 'Custom Rank Added', 'Your custom rank has been added to the cart.');
+}
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }

@@ -587,6 +587,7 @@ body {
     justify-content: center;
     align-items: center;
     margin-bottom: 15px;
+    position: relative;
 }
 
 .product-image-frame img {
@@ -610,11 +611,11 @@ body {
 
 .item-money { color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
 .item-gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-.rank-vip { color: #FF8000; text-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
-.rank-mvp { color: #dbe90c; text-shadow: 0 0 10px rgba(236, 72, 153, 0.4); }
-.rank-mvpplus { color: #0e08c4; text-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
-.rank-nashmi { color: #0fb4e7; text-shadow: 0 0 10px rgba(249, 115, 22, 0.4); }
-.rank-nashmiplus { color: #05fb57; text-shadow: 0 0 10px rgba(234, 179, 8, 0.5); }
+.rank-vip { color: #FF8000; text-shadow: 0 0 10px rgba(255, 128, 0, 0.4); }
+.rank-mvp { color: #dbe90c; text-shadow: 0 0 10px rgba(219, 233, 12, 0.4); }
+.rank-mvpplus { color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+.rank-nashmi { color: #0fb4e7; text-shadow: 0 0 10px rgba(15, 180, 231, 0.4); }
+.rank-nashmiplus { color: #05fb57; text-shadow: 0 0 10px rgba(5, 251, 87, 0.4); }
 .key-doom { color: #f1e505; text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
 .key-magma { color: #9c0707; text-shadow: 0 0 10px rgba(249, 115, 22, 0.4); }
 .key-mythic { color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
@@ -725,6 +726,151 @@ body {
 
 .qty-input-box:focus {
     border-color: var(--accent);
+}
+
+/* =========================================================
+   CSS 3D RANK BADGES
+   ========================================================= */
+
+.rank-badge-frame {
+    background: transparent;
+    border: none;
+    overflow: visible;
+    padding: 0;
+}
+
+.rank-badge {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    position: relative;
+    user-select: none;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.7));
+}
+
+.rank-badge::before {
+    content: '';
+    position: absolute;
+    inset: 5%;
+    background: radial-gradient(circle at center,
+        var(--badge-glow) 0%,
+        transparent 70%);
+    opacity: 0.6;
+    animation: badge-pulse 3.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.75; transform: scale(1.1); }
+}
+
+.rank-badge span {
+    position: relative;
+    z-index: 2;
+    color: var(--badge-text);
+    -webkit-text-stroke: 2px var(--badge-stroke);
+    text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.45),
+        0 2px 0 rgba(255, 255, 255, 0.2),
+        0 3px 0 rgba(0, 0, 0, 0.4),
+        0 4px 0 rgba(0, 0, 0, 0.5),
+        0 5px 0 rgba(0, 0, 0, 0.55),
+        0 6px 0 rgba(0, 0, 0, 0.6),
+        0 7px 0 rgba(0, 0, 0, 0.55),
+        0 8px 0 rgba(0, 0, 0, 0.5),
+        0 10px 20px var(--badge-shadow),
+        0 0 25px var(--badge-glow),
+        0 0 50px var(--badge-glow);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rank-badge:hover span {
+    transform: translateY(-3px);
+    text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5),
+        0 2px 0 rgba(255, 255, 255, 0.3),
+        0 3px 0 rgba(0, 0, 0, 0.4),
+        0 4px 0 rgba(0, 0, 0, 0.5),
+        0 5px 0 rgba(0, 0, 0, 0.55),
+        0 6px 0 rgba(0, 0, 0, 0.6),
+        0 7px 0 rgba(0, 0, 0, 0.55),
+        0 8px 0 rgba(0, 0, 0, 0.5),
+        0 12px 25px var(--badge-shadow),
+        0 0 35px var(--badge-glow),
+        0 0 70px var(--badge-glow);
+}
+
+.rank-badge-vip {
+    --badge-text: #FF8000;
+    --badge-stroke: #7c2d12;
+    --badge-glow: rgba(255, 128, 0, 0.65);
+    --badge-shadow: rgba(255, 128, 0, 0.6);
+    background: radial-gradient(ellipse at center,
+        #2a1558 0%,
+        #150a2e 55%,
+        #0a0518 100%);
+    font-size: 3.8rem;
+}
+
+.rank-badge-mvp {
+    --badge-text: #FFD700;
+    --badge-stroke: #78350f;
+    --badge-glow: rgba(255, 215, 0, 0.65);
+    --badge-shadow: rgba(255, 215, 0, 0.6);
+    background: radial-gradient(ellipse at center,
+        #1e3a8a 0%,
+        #0f1a3d 55%,
+        #050a1f 100%);
+    font-size: 3.8rem;
+}
+
+.rank-badge-mvpplus {
+    --badge-text: #60a5fa;
+    --badge-stroke: #1e3a8a;
+    --badge-glow: rgba(96, 165, 250, 0.65);
+    --badge-shadow: rgba(96, 165, 250, 0.6);
+    background: radial-gradient(ellipse at center,
+        #1e3a8a 0%,
+        #0f1a3d 55%,
+        #050a1f 100%);
+    font-size: 3rem;
+    letter-spacing: 3px;
+}
+
+.rank-badge-nashmi {
+    --badge-text: #0FB4E7;
+    --badge-stroke: #0c4a6e;
+    --badge-glow: rgba(15, 180, 231, 0.65);
+    --badge-shadow: rgba(15, 180, 231, 0.6);
+    background: radial-gradient(ellipse at center,
+        #1e293b 0%,
+        #0f172a 55%,
+        #020617 100%);
+    font-size: 2.4rem;
+    letter-spacing: 4px;
+}
+
+.rank-badge-nashmiplus {
+    --badge-text: #05FB57;
+    --badge-stroke: #064e3b;
+    --badge-glow: rgba(5, 251, 87, 0.65);
+    --badge-shadow: rgba(5, 251, 87, 0.6);
+    background: radial-gradient(ellipse at center,
+        #064e3b 0%,
+        #022c22 55%,
+        #010f0a 100%);
+    font-size: 2rem;
+    letter-spacing: 2px;
 }
 
 /* ============ Builder ============ */
@@ -1559,5 +1705,19 @@ body {
 
     .ip-text {
         font-size: 1.1rem;
+    }
+
+    .rank-badge-vip,
+    .rank-badge-mvp {
+        font-size: 3rem;
+    }
+    .rank-badge-mvpplus {
+        font-size: 2.4rem;
+    }
+    .rank-badge-nashmi {
+        font-size: 2rem;
+    }
+    .rank-badge-nashmiplus {
+        font-size: 1.6rem;
     }
 }

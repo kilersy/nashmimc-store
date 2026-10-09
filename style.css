@@ -728,151 +728,6 @@ body {
     border-color: var(--accent);
 }
 
-/* =========================================================
-   CSS 3D RANK BADGES
-   ========================================================= */
-
-.rank-badge-frame {
-    background: transparent;
-    border: none;
-    overflow: visible;
-    padding: 0;
-}
-
-.rank-badge {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    position: relative;
-    user-select: none;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: default;
-    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.7));
-}
-
-.rank-badge::before {
-    content: '';
-    position: absolute;
-    inset: 5%;
-    background: radial-gradient(circle at center,
-        var(--badge-glow) 0%,
-        transparent 70%);
-    opacity: 0.6;
-    animation: badge-pulse 3.5s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-}
-
-@keyframes badge-pulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 0.75; transform: scale(1.1); }
-}
-
-.rank-badge span {
-    position: relative;
-    z-index: 2;
-    color: var(--badge-text);
-    -webkit-text-stroke: 2px var(--badge-stroke);
-    text-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.45),
-        0 2px 0 rgba(255, 255, 255, 0.2),
-        0 3px 0 rgba(0, 0, 0, 0.4),
-        0 4px 0 rgba(0, 0, 0, 0.5),
-        0 5px 0 rgba(0, 0, 0, 0.55),
-        0 6px 0 rgba(0, 0, 0, 0.6),
-        0 7px 0 rgba(0, 0, 0, 0.55),
-        0 8px 0 rgba(0, 0, 0, 0.5),
-        0 10px 20px var(--badge-shadow),
-        0 0 25px var(--badge-glow),
-        0 0 50px var(--badge-glow);
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rank-badge:hover span {
-    transform: translateY(-3px);
-    text-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.5),
-        0 2px 0 rgba(255, 255, 255, 0.3),
-        0 3px 0 rgba(0, 0, 0, 0.4),
-        0 4px 0 rgba(0, 0, 0, 0.5),
-        0 5px 0 rgba(0, 0, 0, 0.55),
-        0 6px 0 rgba(0, 0, 0, 0.6),
-        0 7px 0 rgba(0, 0, 0, 0.55),
-        0 8px 0 rgba(0, 0, 0, 0.5),
-        0 12px 25px var(--badge-shadow),
-        0 0 35px var(--badge-glow),
-        0 0 70px var(--badge-glow);
-}
-
-.rank-badge-vip {
-    --badge-text: #FF8000;
-    --badge-stroke: #7c2d12;
-    --badge-glow: rgba(255, 128, 0, 0.65);
-    --badge-shadow: rgba(255, 128, 0, 0.6);
-    background: radial-gradient(ellipse at center,
-        #2a1558 0%,
-        #150a2e 55%,
-        #0a0518 100%);
-    font-size: 3.8rem;
-}
-
-.rank-badge-mvp {
-    --badge-text: #FFD700;
-    --badge-stroke: #78350f;
-    --badge-glow: rgba(255, 215, 0, 0.65);
-    --badge-shadow: rgba(255, 215, 0, 0.6);
-    background: radial-gradient(ellipse at center,
-        #1e3a8a 0%,
-        #0f1a3d 55%,
-        #050a1f 100%);
-    font-size: 3.8rem;
-}
-
-.rank-badge-mvpplus {
-    --badge-text: #60a5fa;
-    --badge-stroke: #1e3a8a;
-    --badge-glow: rgba(96, 165, 250, 0.65);
-    --badge-shadow: rgba(96, 165, 250, 0.6);
-    background: radial-gradient(ellipse at center,
-        #1e3a8a 0%,
-        #0f1a3d 55%,
-        #050a1f 100%);
-    font-size: 3rem;
-    letter-spacing: 3px;
-}
-
-.rank-badge-nashmi {
-    --badge-text: #0FB4E7;
-    --badge-stroke: #0c4a6e;
-    --badge-glow: rgba(15, 180, 231, 0.65);
-    --badge-shadow: rgba(15, 180, 231, 0.6);
-    background: radial-gradient(ellipse at center,
-        #1e293b 0%,
-        #0f172a 55%,
-        #020617 100%);
-    font-size: 2.4rem;
-    letter-spacing: 4px;
-}
-
-.rank-badge-nashmiplus {
-    --badge-text: #05FB57;
-    --badge-stroke: #064e3b;
-    --badge-glow: rgba(5, 251, 87, 0.65);
-    --badge-shadow: rgba(5, 251, 87, 0.6);
-    background: radial-gradient(ellipse at center,
-        #064e3b 0%,
-        #022c22 55%,
-        #010f0a 100%);
-    font-size: 2rem;
-    letter-spacing: 2px;
-}
-
 /* ============ Builder ============ */
 .builder-wrapper {
     background: var(--bg-card);
@@ -1706,18 +1561,204 @@ body {
     .ip-text {
         font-size: 1.1rem;
     }
+}
 
-    .rank-badge-vip,
-    .rank-badge-mvp {
+/* =========================================================
+   TRUE 3D TEXT RANKS — No Images
+   ========================================================= */
+
+.rank-3d-frame {
+    background: transparent;
+    border: none;
+    overflow: visible;
+    padding: 0;
+    perspective: 800px;
+    height: 160px;
+}
+
+.rank-3d {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.rank-3d-text {
+    font-family: 'Orbitron', 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
+    font-weight: 900;
+    font-size: 3.6rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    position: relative;
+    display: inline-block;
+    transform: perspective(600px) rotateX(12deg);
+    transition: transform 0.5s ease;
+    white-space: nowrap;
+    line-height: 1;
+    padding: 10px 20px;
+}
+
+.rank-3d:hover .rank-3d-text {
+    transform: perspective(600px) rotateX(0deg) scale(1.08);
+}
+
+.rank-3d-text::before {
+    content: attr(data-text);
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    color: transparent;
+    background: linear-gradient(
+        120deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.85) 50%,
+        transparent 80%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: rank-shine 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes rank-shine {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.rank-3d-vip .rank-3d-text {
+    background: linear-gradient(180deg, #FFD580 0%, #FF8C00 45%, #B34700 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow:
+        1px 1px 0 #B34700,
+        2px 2px 0 #B34700,
+        3px 3px 0 #B34700,
+        4px 4px 0 #A33F00,
+        5px 5px 0 #A33F00,
+        6px 6px 0 #8F3600,
+        7px 7px 0 #8F3600,
+        8px 8px 0 #7A2E00,
+        9px 9px 0 #661F00,
+        10px 10px 0 #4D1800,
+        11px 11px 0 #331000,
+        12px 12px 0 #1A0800,
+        15px 15px 30px rgba(255, 140, 0, 0.7),
+        0 0 40px rgba(255, 140, 0, 0.5);
+}
+
+.rank-3d-mvp .rank-3d-text {
+    background: linear-gradient(180deg, #FFF5A0 0%, #FFD700 45%, #B8860B 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow:
+        1px 1px 0 #B8860B,
+        2px 2px 0 #B8860B,
+        3px 3px 0 #B8860B,
+        4px 4px 0 #A67709,
+        5px 5px 0 #A67709,
+        6px 6px 0 #946A08,
+        7px 7px 0 #946A08,
+        8px 8px 0 #825D07,
+        9px 9px 0 #704F06,
+        10px 10px 0 #5E4205,
+        11px 11px 0 #4C3404,
+        12px 12px 0 #3A2703,
+        15px 15px 30px rgba(255, 215, 0, 0.7),
+        0 0 40px rgba(255, 215, 0, 0.5);
+}
+
+.rank-3d-mvpplus .rank-3d-text {
+    background: linear-gradient(180deg, #93C5FD 0%, #3B82F6 40%, #1E3A8A 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 3rem;
+    text-shadow:
+        1px 1px 0 #0C1E52,
+        2px 2px 0 #0C1E52,
+        3px 3px 0 #0C1E52,
+        4px 4px 0 #0A1944,
+        5px 5px 0 #0A1944,
+        6px 6px 0 #081336,
+        7px 7px 0 #081336,
+        8px 8px 0 #060E28,
+        9px 9px 0 #05091B,
+        10px 10px 0 #03050E,
+        11px 11px 0 #020308,
+        12px 12px 0 #000000,
+        15px 15px 30px rgba(30, 58, 138, 0.85),
+        0 0 40px rgba(59, 130, 246, 0.5);
+}
+
+.rank-3d-nashmi .rank-3d-text {
+    background: linear-gradient(180deg, #A5F3FC 0%, #22D3EE 45%, #0891B2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.6rem;
+    letter-spacing: 6px;
+    text-shadow:
+        1px 1px 0 #055B75,
+        2px 2px 0 #055B75,
+        3px 3px 0 #055B75,
+        4px 4px 0 #044E66,
+        5px 5px 0 #044E66,
+        6px 6px 0 #034257,
+        7px 7px 0 #034257,
+        8px 8px 0 #023548,
+        9px 9px 0 #022839,
+        10px 10px 0 #011B2A,
+        11px 11px 0 #010E1B,
+        12px 12px 0 #00060C,
+        15px 15px 30px rgba(34, 211, 238, 0.75),
+        0 0 40px rgba(34, 211, 238, 0.55);
+}
+
+.rank-3d-nashmiplus .rank-3d-text {
+    background: linear-gradient(180deg, #D9FFD6 0%, #22FF55 45%, #059669 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.2rem;
+    letter-spacing: 4px;
+    text-shadow:
+        1px 1px 0 #034D35,
+        2px 2px 0 #034D35,
+        3px 3px 0 #034D35,
+        4px 4px 0 #02402C,
+        5px 5px 0 #02402C,
+        6px 6px 0 #023623,
+        7px 7px 0 #023623,
+        8px 8px 0 #012B1B,
+        9px 9px 0 #012013,
+        10px 10px 0 #01150C,
+        11px 11px 0 #000A05,
+        12px 12px 0 #000000,
+        15px 15px 30px rgba(34, 255, 85, 0.75),
+        0 0 40px rgba(34, 255, 85, 0.55);
+}
+
+@media (max-width: 768px) {
+    .rank-3d-vip .rank-3d-text,
+    .rank-3d-mvp .rank-3d-text {
         font-size: 3rem;
     }
-    .rank-badge-mvpplus {
+    .rank-3d-mvpplus .rank-3d-text {
         font-size: 2.4rem;
     }
-    .rank-badge-nashmi {
+    .rank-3d-nashmi .rank-3d-text {
         font-size: 2rem;
+        letter-spacing: 4px;
     }
-    .rank-badge-nashmiplus {
+    .rank-3d-nashmiplus .rank-3d-text {
         font-size: 1.6rem;
+        letter-spacing: 2px;
     }
 }

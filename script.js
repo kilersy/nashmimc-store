@@ -26,17 +26,14 @@ const MAX_PROOF_MB = 3;
 
 /* =========================================================
    PRODUCT CATALOG
-   Ranks use CSS 3D text (no image)
    ========================================================= */
 const PRODUCTS = [
-    // ============ RANKS — CSS 3D Text ============
-    { id: 'vip_rank',      category: 'rank', title: 'VIP Rank',      price: 3.99,  badge: 'VIP',      badgeClass: 'rank-3d-vip',        nameClass: 'rank-vip',       infoTitle: 'VIP Rank Features',       infoText: 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.' },
-    { id: 'mvp_rank',      category: 'rank', title: 'MVP Rank',      price: 9.99,  badge: 'MVP',      badgeClass: 'rank-3d-mvp',        nameClass: 'rank-mvp',       infoTitle: 'MVP Rank Features',       infoText: 'Grants MVP prefix, /heal, /feed, 5 homes limit, 2 virtual vaults, and MVP kit.' },
-    { id: 'mvp_plus_rank', category: 'rank', title: 'MVP+ Rank',     price: 17.99, badge: 'MVP+',     badgeClass: 'rank-3d-mvpplus',    nameClass: 'rank-mvpplus',   infoTitle: 'MVP+ Rank Features',      infoText: 'Grants MVP+ prefix, /fly in lobby, /heal, /feed, 8 homes limit, 4 virtual vaults, and exclusive kit.' },
-    { id: 'nashmi_rank',   category: 'rank', title: 'NASHMI Rank',   price: 29.99, badge: 'NASHMI',   badgeClass: 'rank-3d-nashmi',     nameClass: 'rank-nashmi',    infoTitle: 'NASHMI Rank Features',    infoText: 'Grants custom NASHMI prefix, /fly, /workbench, /anvil, 12 homes, 6 virtual vaults, and elite kit.' },
-    { id: 'nashmi_plus',   category: 'rank', title: 'NASHMI+ Rank',  price: 59.99, badge: 'NASHMI+',  badgeClass: 'rank-3d-nashmiplus', nameClass: 'rank-nashmiplus', infoTitle: 'NASHMI+ Rank Features',  infoText: 'Grants ultimate NASHMI+ prefix, all commands unlocked, /fly, /heal, /feed, /anvil, /ec, 20 homes, 10 virtual vaults, and legendary kit.' },
+    { id: 'vip_rank',      category: 'rank', title: 'VIP Rank',      price: 3.99,  image: 'vip.jpg',     nameClass: 'rank-vip',       infoTitle: 'VIP Rank Features',       infoText: 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.' },
+    { id: 'mvp_rank',      category: 'rank', title: 'MVP Rank',      price: 9.99,  image: 'mvp.jpg',     nameClass: 'rank-mvp',       infoTitle: 'MVP Rank Features',       infoText: 'Grants MVP prefix, /heal, /feed, 5 homes limit, 2 virtual vaults, and MVP kit.' },
+    { id: 'mvp_plus_rank', category: 'rank', title: 'MVP+ Rank',     price: 17.99, image: 'mvp+.jpg',    nameClass: 'rank-mvpplus',   infoTitle: 'MVP+ Rank Features',      infoText: 'Grants MVP+ prefix, /fly in lobby, /heal, /feed, 8 homes limit, 4 virtual vaults, and exclusive kit.' },
+    { id: 'nashmi_rank',   category: 'rank', title: 'NASHMI Rank',   price: 29.99, image: 'nashmi.jpg',  nameClass: 'rank-nashmi',    infoTitle: 'NASHMI Rank Features',    infoText: 'Grants custom NASHMI prefix, /fly, /workbench, /anvil, 12 homes, 6 virtual vaults, and elite kit.' },
+    { id: 'nashmi_plus',   category: 'rank', title: 'NASHMI+ Rank',  price: 59.99, image: 'nashmi+.jpg', nameClass: 'rank-nashmiplus', infoTitle: 'NASHMI+ Rank Features',  infoText: 'Grants ultimate NASHMI+ prefix, all commands unlocked, /fly, /heal, /feed, /anvil, /ec, 20 homes, 10 virtual vaults, and legendary kit.' },
 
-    // ============ SMP MONEY ============
     { id: 'smp_money_100k', category: 'smp_money', title: '100k SMP Money', price: 0.99,  image: 'money.jpg', nameClass: 'item-money' },
     { id: 'smp_money_300k', category: 'smp_money', title: '300k SMP Money', price: 2.49,  image: 'money.jpg', nameClass: 'item-money' },
     { id: 'smp_money_500k', category: 'smp_money', title: '500k SMP Money', price: 4.99,  image: 'money.jpg', nameClass: 'item-money' },
@@ -45,7 +42,6 @@ const PRODUCTS = [
     { id: 'smp_money_5m',   category: 'smp_money', title: '5M SMP Money',   price: 49.99, image: 'money.jpg', nameClass: 'item-money' },
     { id: 'smp_money_10m',  category: 'smp_money', title: '10M SMP Money',  price: 74.99, image: 'money.jpg', nameClass: 'item-money' },
 
-    // ============ SMP GOLD ============
     { id: 'smp_gold_100',   category: 'smp_gold', title: '100 SMP Gold',     price: 0.99,  image: 'gold.jpg', nameClass: 'item-gold' },
     { id: 'smp_gold_720',   category: 'smp_gold', title: '720 SMP Gold',     price: 4.99,  image: 'gold.jpg', nameClass: 'item-gold' },
     { id: 'smp_gold_1680',  category: 'smp_gold', title: '1680 SMP Gold',    price: 9.99,  image: 'gold.jpg', nameClass: 'item-gold' },
@@ -55,12 +51,10 @@ const PRODUCTS = [
     { id: 'smp_gold_16600', category: 'smp_gold', title: '16,600 SMP Gold',  price: 74.99, image: 'gold.jpg', nameClass: 'item-gold' },
     { id: 'smp_gold_22400', category: 'smp_gold', title: '22,400 SMP Gold',  price: 99.99, image: 'gold.jpg', nameClass: 'item-gold' },
 
-    // ============ SMP KEYS ============
     { id: 'smp_key_doom',   category: 'smp_key', title: 'DOOM key',   price: 2.49, image: 'doom_key.jpg',   nameClass: 'key-doom',   hasQty: true },
     { id: 'smp_key_magma',  category: 'smp_key', title: 'MAGMA Key',  price: 4.99, image: 'magma_Key.jpg',  nameClass: 'key-magma',  hasQty: true },
     { id: 'smp_key_mythic', category: 'smp_key', title: 'MYTHIC Key', price: 9.99, image: 'mythic_key.jpg', nameClass: 'key-mythic', hasQty: true },
 
-    // ============ BOX GOLD ============
     { id: 'box_gold_100',   category: 'box_gold', title: '100 Box Gold',     price: 0.99,  image: 'gold.jpg', nameClass: 'item-gold' },
     { id: 'box_gold_720',   category: 'box_gold', title: '720 Box Gold',     price: 4.99,  image: 'gold.jpg', nameClass: 'item-gold' },
     { id: 'box_gold_1680',  category: 'box_gold', title: '1680 Box Gold',    price: 9.99,  image: 'gold.jpg', nameClass: 'item-gold' },
@@ -70,7 +64,6 @@ const PRODUCTS = [
     { id: 'box_gold_16400', category: 'box_gold', title: '16,400 Box Gold',  price: 74.99, image: 'gold.jpg', nameClass: 'item-gold' },
     { id: 'box_gold_22400', category: 'box_gold', title: '22,400 Box Gold',  price: 99.99, image: 'gold.jpg', nameClass: 'item-gold' },
 
-    // ============ BOX KEYS ============
     { id: 'box_key_mecha', category: 'box_key', title: 'Mecha Key', price: 5.00, image: 'Mecha.png', nameClass: 'key-mecha', hasQty: true }
 ];
 
@@ -113,30 +106,12 @@ function buildProductCard(product) {
     card.className = 'product-card';
 
     const frame = document.createElement('div');
-
-    if (product.badge && product.badgeClass) {
-        // CSS 3D Text
-        frame.className = 'product-image-frame rank-3d-frame';
-
-        const badge = document.createElement('div');
-        badge.className = 'rank-3d ' + product.badgeClass;
-
-        const span = document.createElement('span');
-        span.className = 'rank-3d-text';
-        span.setAttribute('data-text', product.badge);
-        span.textContent = product.badge;
-
-        badge.appendChild(span);
-        frame.appendChild(badge);
-    } else {
-        // Regular image
-        frame.className = 'product-image-frame';
-        const img = document.createElement('img');
-        img.src = product.image;
-        img.alt = product.title;
-        img.loading = 'lazy';
-        frame.appendChild(img);
-    }
+    frame.className = 'product-image-frame';
+    const img = document.createElement('img');
+    img.src = product.image;
+    img.alt = product.title;
+    img.loading = 'lazy';
+    frame.appendChild(img);
 
     const info = document.createElement('div');
     const nameRow = document.createElement('div');

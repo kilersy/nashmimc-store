@@ -26,16 +26,15 @@ const MAX_PROOF_MB = 3;
 
 /* =========================================================
    PRODUCT CATALOG
-   Ranks use CSS 3D badges (no image)
-   Others use image
+   Ranks use CSS 3D text (no image)
    ========================================================= */
 const PRODUCTS = [
-    // ============ RANKS — CSS 3D Badges ============
-    { id: 'vip_rank',      category: 'rank', title: 'VIP Rank',      price: 3.99,  badge: 'VIP',      badgeClass: 'rank-badge-vip',        nameClass: 'rank-vip',       infoTitle: 'VIP Rank Features',       infoText: 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.' },
-    { id: 'mvp_rank',      category: 'rank', title: 'MVP Rank',      price: 9.99,  badge: 'MVP',      badgeClass: 'rank-badge-mvp',        nameClass: 'rank-mvp',       infoTitle: 'MVP Rank Features',       infoText: 'Grants MVP prefix, /heal, /feed, 5 homes limit, 2 virtual vaults, and MVP kit.' },
-    { id: 'mvp_plus_rank', category: 'rank', title: 'MVP+ Rank',     price: 17.99, badge: 'MVP+',     badgeClass: 'rank-badge-mvpplus',    nameClass: 'rank-mvpplus',   infoTitle: 'MVP+ Rank Features',      infoText: 'Grants MVP+ prefix, /fly in lobby, /heal, /feed, 8 homes limit, 4 virtual vaults, and exclusive kit.' },
-    { id: 'nashmi_rank',   category: 'rank', title: 'NASHMI Rank',   price: 29.99, badge: 'NASHMI',   badgeClass: 'rank-badge-nashmi',     nameClass: 'rank-nashmi',    infoTitle: 'NASHMI Rank Features',    infoText: 'Grants custom NASHMI prefix, /fly, /workbench, /anvil, 12 homes, 6 virtual vaults, and elite kit.' },
-    { id: 'nashmi_plus',   category: 'rank', title: 'NASHMI+ Rank',  price: 59.99, badge: 'NASHMI+',  badgeClass: 'rank-badge-nashmiplus', nameClass: 'rank-nashmiplus', infoTitle: 'NASHMI+ Rank Features',  infoText: 'Grants ultimate NASHMI+ prefix, all commands unlocked, /fly, /heal, /feed, /anvil, /ec, 20 homes, 10 virtual vaults, and legendary kit.' },
+    // ============ RANKS — CSS 3D Text ============
+    { id: 'vip_rank',      category: 'rank', title: 'VIP Rank',      price: 3.99,  badge: 'VIP',      badgeClass: 'rank-3d-vip',        nameClass: 'rank-vip',       infoTitle: 'VIP Rank Features',       infoText: 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.' },
+    { id: 'mvp_rank',      category: 'rank', title: 'MVP Rank',      price: 9.99,  badge: 'MVP',      badgeClass: 'rank-3d-mvp',        nameClass: 'rank-mvp',       infoTitle: 'MVP Rank Features',       infoText: 'Grants MVP prefix, /heal, /feed, 5 homes limit, 2 virtual vaults, and MVP kit.' },
+    { id: 'mvp_plus_rank', category: 'rank', title: 'MVP+ Rank',     price: 17.99, badge: 'MVP+',     badgeClass: 'rank-3d-mvpplus',    nameClass: 'rank-mvpplus',   infoTitle: 'MVP+ Rank Features',      infoText: 'Grants MVP+ prefix, /fly in lobby, /heal, /feed, 8 homes limit, 4 virtual vaults, and exclusive kit.' },
+    { id: 'nashmi_rank',   category: 'rank', title: 'NASHMI Rank',   price: 29.99, badge: 'NASHMI',   badgeClass: 'rank-3d-nashmi',     nameClass: 'rank-nashmi',    infoTitle: 'NASHMI Rank Features',    infoText: 'Grants custom NASHMI prefix, /fly, /workbench, /anvil, 12 homes, 6 virtual vaults, and elite kit.' },
+    { id: 'nashmi_plus',   category: 'rank', title: 'NASHMI+ Rank',  price: 59.99, badge: 'NASHMI+',  badgeClass: 'rank-3d-nashmiplus', nameClass: 'rank-nashmiplus', infoTitle: 'NASHMI+ Rank Features',  infoText: 'Grants ultimate NASHMI+ prefix, all commands unlocked, /fly, /heal, /feed, /anvil, /ec, 20 homes, 10 virtual vaults, and legendary kit.' },
 
     // ============ SMP MONEY ============
     { id: 'smp_money_100k', category: 'smp_money', title: '100k SMP Money', price: 0.99,  image: 'money.jpg', nameClass: 'item-money' },
@@ -113,19 +112,21 @@ function buildProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card';
 
-    // ---- Image Frame: 3D Badge OR Image ----
     const frame = document.createElement('div');
 
     if (product.badge && product.badgeClass) {
-        // CSS 3D Badge
-        frame.className = 'product-image-frame rank-badge-frame';
+        // CSS 3D Text
+        frame.className = 'product-image-frame rank-3d-frame';
+
         const badge = document.createElement('div');
-        badge.className = 'rank-badge ' + product.badgeClass;
+        badge.className = 'rank-3d ' + product.badgeClass;
 
         const span = document.createElement('span');
+        span.className = 'rank-3d-text';
+        span.setAttribute('data-text', product.badge);
         span.textContent = product.badge;
-        badge.appendChild(span);
 
+        badge.appendChild(span);
         frame.appendChild(badge);
     } else {
         // Regular image

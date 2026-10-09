@@ -4,7 +4,6 @@
 
 'use strict';
 
-/* ---------- State ---------- */
 let cart = [];
 let selectedPaymentMethod = 'paypal';
 let discountPercent = 0;
@@ -23,10 +22,10 @@ let paypalSession = 0;
 
 const STORAGE_KEY = 'nashmi_orders';
 const MAX_HISTORY = 50;
-const MAX_PROOF_MB = 8;
+const MAX_PROOF_MB = 3;
 
 /* =========================================================
-   PRODUCT CATALOG (frontend mirror)
+   PRODUCT CATALOG
    ========================================================= */
 const PRODUCTS = [
     { id: 'vip_rank',      category: 'rank', title: 'VIP Rank',      price: 3.99,  image: 'vip.jpg',     nameClass: 'rank-vip',       infoTitle: 'VIP Rank Features',       infoText: 'Grants basic VIP prefix, /feed command, 3 homes limit, and access to VIP kit.' },
@@ -85,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSubmitButton();
     renderUserOrders();
 
-    setInterval(syncOrdersFromServer, 30000);
+    setInterval(syncOrdersFromServer, 60000);
 });
 
 /* =========================================================
@@ -453,12 +452,10 @@ function setPaymentMethod(method) {
     if (paypalContainer) paypalContainer.style.display = selectedPaymentMethod === 'paypal' ? 'block' : 'none';
     if (cryptoDetails) cryptoDetails.style.display = selectedPaymentMethod === 'crypto' ? 'block' : 'none';
 
-    // Show proof upload ONLY for crypto
     if (proofContainer) {
         proofContainer.style.display = selectedPaymentMethod === 'crypto' ? 'block' : 'none';
     }
 
-    // Reset file input when switching to PayPal
     if (selectedPaymentMethod === 'paypal') {
         const fileInput = document.getElementById('checkoutProofImage');
         if (fileInput) fileInput.value = '';
@@ -491,12 +488,7 @@ async function renderPayPalButtons() {
 
     try {
         const buttons = paypal.Buttons({
-            style: {
-                layout: 'vertical',
-                shape: 'rect',
-                label: 'paypal',
-                height: 45
-            },
+            style: { layout: 'vertical', shape: 'rect', label: 'paypal', height: 45 },
 
             onClick: (data, actions) => {
                 const customer = getCheckoutCustomer();
@@ -530,11 +522,7 @@ async function renderPayPalButtons() {
                     paypalOrderState = { paypalOrderId, clientOrderId };
                     return paypalOrderId;
                 } catch (error) {
-                    showNotification(
-                        '<i class="fa-solid fa-circle-exclamation"></i>',
-                        'PayPal Error',
-                        error.message || 'Unable to create the PayPal order.'
-                    );
+                    showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'PayPal Error', error.message || 'Unable to create the PayPal order.');
                     throw error;
                 }
             },
@@ -570,11 +558,7 @@ async function renderPayPalButtons() {
                     finalizeOrderSuccess(orderId, finalTotal);
                     paypalOrderState = null;
                 } catch (error) {
-                    showNotification(
-                        '<i class="fa-solid fa-circle-exclamation"></i>',
-                        'PayPal Payment Error',
-                        error.message || 'PayPal payment could not be completed.'
-                    );
+                    showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'PayPal Payment Error', error.message || 'PayPal payment could not be completed.');
                 }
             },
 
@@ -585,11 +569,7 @@ async function renderPayPalButtons() {
 
             onCancel: () => {
                 paypalOrderState = null;
-                showNotification(
-                    '<i class="fa-solid fa-circle-info"></i>',
-                    'Payment Cancelled',
-                    'The PayPal payment was cancelled. Your cart is still available.'
-                );
+                showNotification('<i class="fa-solid fa-circle-info"></i>', 'Payment Cancelled', 'The PayPal payment was cancelled. Your cart is still available.');
             }
         });
 
@@ -617,11 +597,7 @@ function initSubmitButton() {
 
 async function processCheckoutWebhook(paymentReference) {
     if (selectedPaymentMethod === 'paypal') {
-        showNotification(
-            '<i class="fa-brands fa-paypal"></i>',
-            'Complete PayPal Payment',
-            'Please complete the payment using the PayPal button above.'
-        );
+        showNotification('<i class="fa-brands fa-paypal"></i>', 'Complete PayPal Payment', 'Please complete the payment using the PayPal button above.');
         return;
     }
 
@@ -642,11 +618,7 @@ async function processCheckoutWebhook(paymentReference) {
     }
 
     if (!imageProof) {
-        showNotification(
-            '<i class="fa-solid fa-image"></i>',
-            'Payment Proof Required',
-            'Please attach your USDT payment proof image before submitting.'
-        );
+        showNotification('<i class="fa-solid fa-image"></i>', 'Payment Proof Required', 'Please attach your USDT payment proof image before submitting.');
         return;
     }
 
@@ -681,11 +653,7 @@ async function processCheckoutWebhook(paymentReference) {
 
         finalizeOrderSuccess(serverOrderId, serverTotal);
     } catch (error) {
-        showNotification(
-            '<i class="fa-solid fa-circle-exclamation"></i>',
-            'USDT Order Failed',
-            error.message || 'The USDT order could not be sent to the store server.'
-        );
+        showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'USDT Order Failed', error.message || 'The USDT order could not be sent to the store server.');
     } finally {
         setCheckoutBusy(false, 'Complete Payment & Submit Order');
     }
@@ -765,7 +733,39 @@ function readPaymentProof() {
         }
 
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const MAX_DIM = 1600;
+                    let w = img.width;
+                    let h = img.height;
+
+                    if (w > MAX_DIM || h > MAX_DIM) {
+                        if (w > h) {
+                            h = Math.round(h * (MAX_DIM / w));
+                            w = MAX_DIM;
+                        } else {
+                            w = Math.round(w * (MAX_DIM / h));
+                            h = MAX_DIM;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const compressed = canvas.toDataURL('image/jpeg', 0.8);
+                    resolve(compressed);
+                } catch (err) {
+                    resolve(e.target.result);
+                }
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+        };
         reader.onerror = () => reject(new Error('Unable to read the image.'));
         reader.readAsDataURL(imageFile);
     });
@@ -840,7 +840,7 @@ function finalizeOrderSuccess(orderId, finalTotal) {
         id: orderId,
         date: new Date().toLocaleDateString(),
         total: finalTotal,
-        status: 'Pending',
+        status: 'pending',
         items: [...cart]
     });
 
@@ -936,6 +936,15 @@ function saveOrderToHistory(order) {
     renderUserOrders();
 }
 
+function normalizeStatus(status) {
+    if (!status) return 'pending';
+    const s = String(status).toLowerCase().trim();
+    if (s === 'approved' || s === 'مقبول') return 'approved';
+    if (s === 'rejected' || s === 'مرفوض') return 'rejected';
+    if (s === 'unknown') return 'unknown';
+    return 'pending';
+}
+
 function renderUserOrders() {
     const container = document.getElementById('userOrdersContainer');
     if (!container) return;
@@ -973,18 +982,23 @@ function renderUserOrders() {
         left.appendChild(meta);
 
         const badge = document.createElement('span');
+        const ns = normalizeStatus(ord.status);
         let statusClass = 'status-pending';
         let statusIcon = 'fa-clock';
         let statusText = 'Pending';
 
-        if (ord.status === 'Approved' || ord.status === 'مقبول') {
+        if (ns === 'approved') {
             statusClass = 'status-success';
             statusIcon = 'fa-check';
             statusText = 'Approved';
-        } else if (ord.status === 'Rejected' || ord.status === 'مرفوض') {
+        } else if (ns === 'rejected') {
             statusClass = 'status-danger';
             statusIcon = 'fa-xmark';
             statusText = 'Rejected';
+        } else if (ns === 'unknown') {
+            statusClass = 'status-danger';
+            statusIcon = 'fa-question';
+            statusText = 'Not Found';
         }
 
         badge.className = `status-badge ${statusClass}`;
@@ -1005,18 +1019,40 @@ async function syncOrdersFromServer() {
     if (history.length === 0) return;
 
     let updated = false;
+    const toRemove = [];
 
     await Promise.all(history.map(async localOrd => {
         try {
             const srvOrd = await apiRequest(`/api/orders/${encodeURIComponent(localOrd.id)}`);
-            if (srvOrd && srvOrd.status && srvOrd.status !== localOrd.status) {
-                localOrd.status = srvOrd.status;
+
+            if (!srvOrd || !srvOrd.status) return;
+
+            const normalized = normalizeStatus(srvOrd.status);
+
+            if (normalized !== localOrd.status) {
+                localOrd.status = normalized;
                 updated = true;
             }
-        } catch {
-            // ignore
+
+            if (srvOrd.total != null) {
+                const srvTotal = Number(srvOrd.total).toFixed(2);
+                if (String(localOrd.total) !== srvTotal) {
+                    localOrd.total = srvTotal;
+                    updated = true;
+                }
+            }
+        } catch (err) {
+            const msg = String(err && err.message || '').toLowerCase();
+            if (msg.includes('not found')) {
+                toRemove.push(localOrd.id);
+            }
         }
     }));
+
+    if (toRemove.length > 0) {
+        history = history.filter(o => !toRemove.includes(o.id));
+        updated = true;
+    }
 
     if (updated) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
@@ -1076,9 +1112,14 @@ async function trackOrder() {
             stStrong.textContent = 'Status: ';
             resultText.appendChild(stStrong);
 
+            const ns = normalizeStatus(found.status);
+            let statusLabel = 'Pending';
+            if (ns === 'approved') statusLabel = 'Approved';
+            else if (ns === 'rejected') statusLabel = 'Rejected';
+
             const badge = document.createElement('span');
             badge.className = 'status-badge';
-            badge.innerHTML = `<i class="fa-solid fa-info-circle"></i> ${escapeHtml(found.status || 'Pending')}`;
+            badge.innerHTML = `<i class="fa-solid fa-info-circle"></i> ${escapeHtml(statusLabel)}`;
             resultText.appendChild(badge);
             resultText.appendChild(document.createElement('br'));
             resultText.appendChild(document.createElement('br'));
@@ -1108,7 +1149,7 @@ async function trackOrder() {
             id: found.id,
             date: found.date || new Date().toLocaleDateString(),
             total: Number(found.total || 0).toFixed(2),
-            status: found.status || 'Pending',
+            status: normalizeStatus(found.status),
             items
         };
 

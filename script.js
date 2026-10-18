@@ -1,11 +1,11 @@
 /* =========================================================
-   NashmiMC Store — Frontend Script (Manual Payment)
+   NashmiMC Store — Frontend Script (Manual Payment + Full Error Reporting)
    ========================================================= */
 
 'use strict';
 
 let cart = [];
-let selectedPaymentMethod = 'paypal'; // هنخليها باي بال كاسم بس، عشان الشكل
+let selectedPaymentMethod = 'paypal';
 let discountPercent = 0;
 let appliedCouponName = '';
 
@@ -506,6 +506,7 @@ async function processCheckoutWebhook(paymentReference) {
             body: JSON.stringify(orderData)
         });
 
+        // لو السيرفر مردش بنجاح، بنطلع إيرور
         if (!result || result.success !== true) {
             throw new Error(result?.error || 'Server rejected the order.');
         }
@@ -515,6 +516,7 @@ async function processCheckoutWebhook(paymentReference) {
 
         finalizeOrderSuccess(serverOrderId, serverTotal);
     } catch (error) {
+        // هنا بنعرض إيرور السيرفر الحقيقي
         showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Order Failed', error.message || 'The order could not be sent to the store server.');
     } finally {
         setCheckoutBusy(false, 'Complete Payment & Submit Order');

@@ -45,7 +45,7 @@
 
         <div class="cart-coupon-section">
             <div class="coupon-input-row">
-                <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Coupon Code (e.g. NASHMI2026)" autocomplete="off">
+                <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Coupon Code" autocomplete="off">
                 <button class="coupon-apply-btn" id="couponApplyBtn" type="button">Apply</button>
             </div>
             <div class="coupon-msg" id="couponMsg"></div>
@@ -156,7 +156,7 @@
                     </div>
                     <div class="guide-box">
                         <h4><i class="fa-solid fa-3"></i> Secure Checkout</h4>
-                        <p>Proceed to checkout, pay via PayPal/Cards or USDT Crypto, and receive your unique Order ID.</p>
+                        <p>Proceed to checkout and pay via PayPal or Credit Card. Your order is processed automatically.</p>
                     </div>
                 </div>
 
@@ -227,7 +227,7 @@
                     </div>
                     <div class="faq-item">
                         <h4>Are payments secure?</h4>
-                        <p>Yes, all payments processed through PayPal and cryptocurrency are fully secure.</p>
+                        <p>Yes, all payments processed through PayPal and credit cards are fully secure.</p>
                     </div>
                     <div class="faq-item">
                         <h4>How do I use promo codes?</h4>
@@ -371,8 +371,8 @@
             <div class="top-payment-warning-banner">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <div class="warning-text">
-                    <strong>Important Notice:</strong>
-                    <p>PayPal orders are processed automatically — no proof needed. Crypto (USDT) orders require a payment proof screenshot.</p>
+                    <strong>Automatic Payment:</strong>
+                    <p>PayPal and Credit Cards are processed automatically. You will receive your Order ID instantly.</p>
                 </div>
             </div>
 
@@ -387,41 +387,16 @@
                     <label for="checkoutDiscordInput">Discord Username:</label>
                     <input type="text" id="checkoutDiscordInput" placeholder="e.g. username or username#1234" maxlength="32" autocomplete="off">
                 </div>
-
-                <div class="form-control proof-upload-box" id="proofUploadContainer" style="display: none;">
-                    <label for="checkoutProofImage" class="proof-upload-label">
-                        <i class="fa-solid fa-image"></i> <span>Upload USDT Payment Proof (max 3MB):</span>
-                    </label>
-                    <input type="file" id="checkoutProofImage" accept="image/png,image/jpeg,image/webp">
-                </div>
-            </div>
-
-            <div class="payment-tabs">
-                <button type="button" class="payment-tab-btn active" id="tabPaypal">
-                    <i class="fa-brands fa-paypal"></i> <span>PayPal / Credit Cards</span>
-                </button>
-                <button type="button" class="payment-tab-btn" id="tabCrypto">
-                    <i class="fa-solid fa-coins"></i> <span>Crypto (USDT TRC20)</span>
-                </button>
             </div>
 
             <div id="paypalContainer">
                 <div class="payment-notice-banner">
-                    <p><strong>PayPal &amp; Credit Card Payment:</strong> You can pay directly using your PayPal account or via Debit/Credit Card. After successful payment, your order is sent to Discord automatically with a full invoice.</p>
+                    <p><strong>PayPal &amp; Credit Card Payment:</strong> You can pay directly using your PayPal account or via Debit/Credit Card. After successful payment, your order is sent to Discord automatically.</p>
                 </div>
                 <div id="paypal-button-container"></div>
             </div>
 
-            <div id="cryptoDetails" class="crypto-box" style="display: none;">
-                <p class="crypto-label">Binance Wallet Address (USDT - TRC20 Network):</p>
-                <div class="wallet-address" id="walletAddr">TL3Ka5dVzK9M5NVAedwvw3KjgERAtsTHcU</div>
-                <button type="button" id="walletCopyBtn" class="btn-copy-ip" data-copy="TL3Ka5dVzK9M5NVAedwvw3KjgERAtsTHcU" data-copy-label="Wallet" type="button">
-                    <i class="fa-solid fa-copy"></i> <span>Copy Wallet</span>
-                </button>
-                <p class="crypto-hint">After sending the exact amount, upload a screenshot of the transfer and click Submit Order below.</p>
-            </div>
-
-            <button type="button" class="form-submit-btn" id="submitBtn">
+            <button type="button" class="form-submit-btn" id="submitBtn" style="display:none;">
                 Complete Payment &amp; Submit Order <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>

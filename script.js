@@ -1,5 +1,5 @@
 /* =========================================================
-   NashmiMC Store — Frontend Script (Manual Payment + Full Error Reporting)
+   NashmiMC Store — Frontend Script (PayPal + Manual Proof)
    ========================================================= */
 
 'use strict';
@@ -16,6 +16,9 @@ const API_URL = (() => {
     }
     return 'https://nashmimc-bot.onrender.com';
 })();
+
+let paypalOrderState = null;
+let paypalSession = 0;
 
 const STORAGE_KEY = 'nashmi_orders';
 const MAX_HISTORY = 50;
@@ -424,6 +427,7 @@ function openCheckoutModal() {
 function closeCheckoutModal() {
     const modal = document.getElementById('checkoutModal');
     if (modal) modal.classList.remove('open');
+    paypalSession++;
 }
 
 /* =========================================================
@@ -449,9 +453,134 @@ function setPaymentMethod(method) {
     if (paypalContainer) paypalContainer.style.display = selectedPaymentMethod === 'paypal' ? 'block' : 'none';
     if (cryptoDetails) cryptoDetails.style.display = selectedPaymentMethod === 'crypto' ? 'block' : 'none';
 
-    // تعديل: رفع الصورة بيظهر دايماً (سواء باي بال أو كريبتو)
     if (proofContainer) {
         proofContainer.style.display = 'block'; 
+    }
+
+    if (selectedPaymentMethod === 'paypal') {
+        renderPayPalButtons();
+    } else {
+        const ppc = document.getElementById('paypal-button-container');
+        if (ppc) ppc.innerHTML = '';
+        paypalOrderState = null;
+    }
+}
+
+/* =========================================================
+   PAYPAL SDK (رجعناه)
+   ========================================================= */
+async function renderPayPalButtons() {
+    const container = document.getElementById('paypal-button-container');
+    if (!container) return;
+    if (selectedPaymentMethod !== 'paypal') return;
+
+    if (typeof paypal === 'undefined') {
+        container.innerHTML = '<p class="paypal-error">PayPal is currently unavailable. Please refresh the page.</p>';
+        return;
+    }
+
+    const session = ++paypalSession;
+    container.innerHTML = '';
+
+    try {
+        const buttons = paypal.Buttons({
+            style: { layout: 'vertical', shape: 'rect', label: 'paypal', height: 45 },
+
+            onClick: (data, actions) => {
+                const customer = getCheckoutCustomer();
+                if (!customer) return actions.reject();
+                return actions.resolve();
+            },
+
+            createOrder: async () => {
+                try {
+                    const customer = getCheckoutCustomer();
+                    if (!customer) throw new Error('Customer information is required.');
+                    if (cart.length === 0) throw new Error('Your shopping cart is empty.');
+
+                    const clientOrderId = makeClientOrderId();
+
+                    const result = await apiRequest('/api/paypal/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            clientOrderId,
+                            ign: customer.ign,
+                            discordUser: customer.discordUser,
+                            items: getServerCart(),
+                            couponCode: appliedCouponName || null
+                        })
+                    });
+
+                    const paypalOrderId = result?.orderID || result?.orderId || result?.id;
+                    if (!paypalOrderId) throw new Error(result?.error || 'Server did not return PayPal Order ID.');
+
+                    paypalOrderState = { paypalOrderId, clientOrderId };
+                    return paypalOrderId;
+                } catch (error) {
+                    showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'PayPal Error', error.message || 'Unable to create the PayPal order.');
+                    throw error;
+                }
+            },
+
+            onApprove: async (data) => {
+                try {
+                    const customer = getCheckoutCustomer();
+                    if (!customer) return;
+
+                    const clientOrderId = paypalOrderState?.clientOrderId || makeClientOrderId();
+                    const paypalOrderId = data?.orderID || paypalOrderState?.paypalOrderId;
+
+                    if (!paypalOrderId) throw new Error('PayPal Order ID is missing.');
+
+                    const result = await apiRequest('/api/paypal/capture-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            paypalOrderId,
+                            clientOrderId,
+                            ign: customer.ign,
+                            discordUser: customer.discordUser,
+                            items: getServerCart(),
+                            couponCode: appliedCouponName || null
+                        })
+                    });
+
+                    if (result?.success === false) throw new Error(result?.error || 'Server rejected PayPal payment.');
+
+                    const orderId = result?.orderId || clientOrderId;
+                    const finalTotal = Number(result?.total ?? getCartFinalTotal()).toFixed(2);
+
+                    finalizeOrderSuccess(orderId, finalTotal);
+                    paypalOrderState = null;
+                } catch (error) {
+                    showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'PayPal Payment Error', error.message || 'PayPal payment could not be completed.');
+                }
+            },
+
+            onError: (error) => {
+                const message = error?.message || error?.details?.[0]?.description || 'PayPal could not complete the payment. Please try again.';
+                showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'PayPal Error', message);
+            },
+
+            onCancel: () => {
+                paypalOrderState = null;
+                showNotification('<i class="fa-solid fa-circle-info"></i>', 'Payment Cancelled', 'The PayPal payment was cancelled. Your cart is still available.');
+            }
+        });
+
+        if (typeof buttons.isEligible === 'function' && !buttons.isEligible()) {
+            if (session === paypalSession) {
+                container.innerHTML = '<p class="paypal-error">PayPal is not available for this transaction.</p>';
+            }
+            return;
+        }
+
+        await buttons.render('#paypal-button-container');
+    } catch (error) {
+        if (session === paypalSession) {
+            container.innerHTML = '<p class="paypal-error">Unable to load PayPal. Please refresh.</p>';
+        }
     }
 }
 
@@ -491,7 +620,7 @@ async function processCheckoutWebhook(paymentReference) {
         orderId,
         ign: customer.ign,
         discordUser: customer.discordUser,
-        paymentMethod: selectedPaymentMethod.toUpperCase(), // هيتبعت CRYPTO أو PAYPAL
+        paymentMethod: selectedPaymentMethod.toUpperCase(),
         paymentReference,
         items: getServerCart(),
         imageProof
@@ -506,7 +635,6 @@ async function processCheckoutWebhook(paymentReference) {
             body: JSON.stringify(orderData)
         });
 
-        // لو السيرفر مردش بنجاح، بنطلع إيرور
         if (!result || result.success !== true) {
             throw new Error(result?.error || 'Server rejected the order.');
         }
@@ -516,7 +644,6 @@ async function processCheckoutWebhook(paymentReference) {
 
         finalizeOrderSuccess(serverOrderId, serverTotal);
     } catch (error) {
-        // هنا بنعرض إيرور السيرفر الحقيقي
         showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Order Failed', error.message || 'The order could not be sent to the store server.');
     } finally {
         setCheckoutBusy(false, 'Complete Payment & Submit Order');

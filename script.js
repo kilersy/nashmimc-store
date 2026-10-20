@@ -1,5 +1,5 @@
 /* =========================================================
-   NashmiMC Store — Frontend Script (PayPal + Manual Proof)
+   NashmiMC Store — Frontend Script (PayPal Automatic Only)
    ========================================================= */
 
 'use strict';
@@ -22,7 +22,6 @@ let paypalSession = 0;
 
 const STORAGE_KEY = 'nashmi_orders';
 const MAX_HISTORY = 50;
-const MAX_PROOF_MB = 3;
 
 /* =========================================================
    PRODUCT CATALOG
@@ -435,44 +434,31 @@ function closeCheckoutModal() {
    ========================================================= */
 function initPaymentTabs() {
     document.getElementById('tabPaypal')?.addEventListener('click', () => setPaymentMethod('paypal'));
-    document.getElementById('tabCrypto')?.addEventListener('click', () => setPaymentMethod('crypto'));
+    // شلنا زرار الكريبتو
 }
 
 function setPaymentMethod(method) {
-    selectedPaymentMethod = method === 'crypto' ? 'crypto' : 'paypal';
+    selectedPaymentMethod = 'paypal';
 
     const tabPaypal = document.getElementById('tabPaypal');
-    const tabCrypto = document.getElementById('tabCrypto');
-    const paypalContainer = document.getElementById('paypalContainer');
+    if (tabPaypal) tabPaypal.classList.add('active');
+
+    // إخفاء أي عناصر ليها علاقة بالكريبتو
     const cryptoDetails = document.getElementById('cryptoDetails');
     const proofContainer = document.getElementById('proofUploadContainer');
+    if (cryptoDetails) cryptoDetails.style.display = 'none';
+    if (proofContainer) proofContainer.style.display = 'none';
 
-    if (tabPaypal) tabPaypal.classList.toggle('active', selectedPaymentMethod === 'paypal');
-    if (tabCrypto) tabCrypto.classList.toggle('active', selectedPaymentMethod === 'crypto');
-    
-    if (paypalContainer) paypalContainer.style.display = selectedPaymentMethod === 'paypal' ? 'block' : 'none';
-    if (cryptoDetails) cryptoDetails.style.display = selectedPaymentMethod === 'crypto' ? 'block' : 'none';
-
-    if (proofContainer) {
-        proofContainer.style.display = 'block'; 
-    }
-
-    if (selectedPaymentMethod === 'paypal') {
-        renderPayPalButtons();
-    } else {
-        const ppc = document.getElementById('paypal-button-container');
-        if (ppc) ppc.innerHTML = '';
-        paypalOrderState = null;
-    }
+    // إظهار زرار باي بال
+    renderPayPalButtons();
 }
 
 /* =========================================================
-   PAYPAL SDK (رجعناه)
+   PAYPAL
    ========================================================= */
 async function renderPayPalButtons() {
     const container = document.getElementById('paypal-button-container');
     if (!container) return;
-    if (selectedPaymentMethod !== 'paypal') return;
 
     if (typeof paypal === 'undefined') {
         container.innerHTML = '<p class="paypal-error">PayPal is currently unavailable. Please refresh the page.</p>';
@@ -585,72 +571,6 @@ async function renderPayPalButtons() {
 }
 
 /* =========================================================
-   SUBMIT (Manual Payment)
-   ========================================================= */
-function initSubmitButton() {
-    document.getElementById('submitBtn')?.addEventListener('click', () => processCheckoutWebhook('Manual Payment'));
-}
-
-async function processCheckoutWebhook(paymentReference) {
-    if (cart.length === 0) {
-        showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Empty Cart', 'Your shopping cart is empty.');
-        return;
-    }
-
-    const customer = getCheckoutCustomer();
-    if (!customer) return;
-
-    let imageProof = null;
-    try {
-        imageProof = await readPaymentProof();
-    } catch (error) {
-        showNotification('<i class="fa-solid fa-triangle-exclamation"></i>', 'Payment Proof Error', error.message);
-        return;
-    }
-
-    if (!imageProof) {
-        showNotification('<i class="fa-solid fa-image"></i>', 'Payment Proof Required', 'Please attach your payment proof image before submitting.');
-        return;
-    }
-
-    const orderId = makeClientOrderId();
-    const finalTotal = getCartFinalTotal().toFixed(2);
-
-    const orderData = {
-        orderId,
-        ign: customer.ign,
-        discordUser: customer.discordUser,
-        paymentMethod: selectedPaymentMethod.toUpperCase(),
-        paymentReference,
-        items: getServerCart(),
-        imageProof
-    };
-
-    try {
-        setCheckoutBusy(true, 'Submitting Order');
-
-        const result = await apiRequest('/api/new-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
-        });
-
-        if (!result || result.success !== true) {
-            throw new Error(result?.error || 'Server rejected the order.');
-        }
-
-        const serverOrderId = result.orderId || orderId;
-        const serverTotal = Number(result.total ?? finalTotal).toFixed(2);
-
-        finalizeOrderSuccess(serverOrderId, serverTotal);
-    } catch (error) {
-        showNotification('<i class="fa-solid fa-circle-exclamation"></i>', 'Order Failed', error.message || 'The order could not be sent to the store server.');
-    } finally {
-        setCheckoutBusy(false, 'Complete Payment & Submit Order');
-    }
-}
-
-/* =========================================================
    HELPERS
    ========================================================= */
 function getCheckoutCustomer() {
@@ -702,79 +622,10 @@ function getServerCart() {
     }));
 }
 
-function readPaymentProof() {
-    return new Promise((resolve, reject) => {
-        const proofInput = document.getElementById('checkoutProofImage');
-        const imageFile = proofInput?.files?.[0] || null;
-
-        if (!imageFile) {
-            resolve(null);
-            return;
-        }
-
-        const maxSizeBytes = MAX_PROOF_MB * 1024 * 1024;
-        if (imageFile.size > maxSizeBytes) {
-            reject(new Error(`Image too large. Max ${MAX_PROOF_MB} MB.`));
-            return;
-        }
-
-        if (!/^image\/(png|jpeg|jpg|webp)$/i.test(imageFile.type)) {
-            reject(new Error('Please upload a PNG, JPG, or WEBP image.'));
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                try {
-                    const MAX_DIM = 1600;
-                    let w = img.width;
-                    let h = img.height;
-
-                    if (w > MAX_DIM || h > MAX_DIM) {
-                        if (w > h) {
-                            h = Math.round(h * (MAX_DIM / w));
-                            w = MAX_DIM;
-                        } else {
-                            w = Math.round(w * (MAX_DIM / h));
-                            h = MAX_DIM;
-                        }
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-
-                    const compressed = canvas.toDataURL('image/jpeg', 0.8);
-                    resolve(compressed);
-                } catch (err) {
-                    resolve(e.target.result);
-                }
-            };
-            img.onerror = () => resolve(e.target.result);
-            img.src = e.target.result;
-        };
-        reader.onerror = () => reject(new Error('Unable to read the image.'));
-        reader.readAsDataURL(imageFile);
-    });
-}
-
 function makeClientOrderId() {
     const timestamp = Date.now().toString(36).toUpperCase();
     const randomPart = Math.floor(1000 + Math.random() * 9000);
     return `NASHMI-${timestamp}-${randomPart}`;
-}
-
-function setCheckoutBusy(isBusy, text = 'Complete Payment & Submit Order') {
-    const submitBtn = document.getElementById('submitBtn');
-    if (!submitBtn) return;
-    submitBtn.disabled = isBusy;
-    submitBtn.innerHTML = isBusy
-        ? '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'
-        : `${text} <i class="fa-solid fa-paper-plane"></i>`;
 }
 
 /* =========================================================
@@ -853,10 +704,8 @@ function resetCart() {
 
     const couponInput = document.getElementById('couponCodeInput');
     const msg = document.getElementById('couponMsg');
-    const fileInput = document.getElementById('checkoutProofImage');
     if (couponInput) couponInput.value = '';
     if (msg) msg.textContent = '';
-    if (fileInput) fileInput.value = '';
 
     updateCartUI();
 }

@@ -1,5 +1,5 @@
 /* =========================================================
-   NashmiMC Store — Frontend Script (PayPal Automatic Only)
+   NashmiMC Store — Frontend Script (PayPal Automatic + Custom Coupon)
    ========================================================= */
 
 'use strict';
@@ -8,6 +8,9 @@ let cart = [];
 let selectedPaymentMethod = 'paypal';
 let discountPercent = 0;
 let appliedCouponName = '';
+
+// غير الكلمة دي لأي حاجة أنت عايزها (هي دي اللي هتشتغل في الموقع)
+const SECRET_COUPON_CODE = 'VIP2026'; 
 
 const API_URL = (() => {
     const host = window.location.hostname;
@@ -319,7 +322,7 @@ function clearCart() {
     showConfirmNotification(
         '<i class="fa-solid fa-trash"></i>',
         'Clear Cart?',
-        'This will remove all items from your cart. The coupon will remain applied.',
+        'This will remove all items from your cart.',
         () => {
             cart = [];
             updateCartUI();
@@ -389,11 +392,12 @@ function applyCoupon() {
 
     const code = (codeInput.value || '').trim().toUpperCase();
 
-    if (code === 'NASHMI2026') {
+    // تم تغيير الكلمة هنا
+    if (code === SECRET_COUPON_CODE) { 
         discountPercent = 15;
         appliedCouponName = code;
         msg.style.color = 'var(--success)';
-        msg.textContent = 'Coupon NASHMI2026 applied! (15% OFF)';
+        msg.textContent = 'Coupon applied! (15% OFF)';
     } else {
         discountPercent = 0;
         appliedCouponName = '';
@@ -434,7 +438,6 @@ function closeCheckoutModal() {
    ========================================================= */
 function initPaymentTabs() {
     document.getElementById('tabPaypal')?.addEventListener('click', () => setPaymentMethod('paypal'));
-    // شلنا زرار الكريبتو
 }
 
 function setPaymentMethod(method) {
